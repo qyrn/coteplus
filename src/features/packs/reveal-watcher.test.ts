@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { readRevealPosition } from "./pull-reveal-tracker";
+import { readRevealPosition } from "./reveal-watcher";
 
 describe("readRevealPosition", () => {
 	it("reads the current card position", () => {
 		document.body.innerHTML = "<main><div><span>Carte</span><span>3</span><span>/ 5</span></div></main>";
-		expect(readRevealPosition(document)).toEqual({ index: 3, total: 5 });
+		expect(readRevealPosition(document)).toMatchObject({ index: 3, total: 5 });
 	});
 
 	it("returns null outside the reveal", () => {

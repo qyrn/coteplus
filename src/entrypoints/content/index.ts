@@ -6,8 +6,10 @@ import { createCardImageService } from "../../features/images/card-image-service
 import { startMissingImages } from "../../features/images/missing-images";
 import { startMarketDeals } from "../../features/market/market-deals";
 import { startPackStockWatcher } from "../../features/packs/pack-stock-watcher";
+import { startPackValueRecap } from "../../features/packs/pack-value-recap";
 import { startPullRevealTracker } from "../../features/packs/pull-reveal-tracker";
 import { startPullStatsPanel } from "../../features/packs/pull-stats-panel";
+import { createRevealWatcher } from "../../features/packs/reveal-watcher";
 import { startAveragePrices } from "../../features/prices/average-prices";
 import { startBulkPriceToolbar } from "../../features/prices/bulk-price-toolbar";
 import { createPriceService } from "../../features/prices/price-service";
@@ -52,7 +54,9 @@ export default defineContentScript({
 		startMarketDeals(ctx, pageWatcher, priceService);
 		startMissingImages(ctx, pageWatcher, catalog, imageService);
 		startPackStockWatcher(pageWatcher);
-		startPullRevealTracker(pageWatcher);
+		const revealWatcher = createRevealWatcher(pageWatcher);
+		startPullRevealTracker(revealWatcher);
+		startPackValueRecap(revealWatcher, priceService);
 		startPullStatsPanel(ctx, pageWatcher);
 	},
 });

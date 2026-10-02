@@ -186,3 +186,12 @@
 	outline: 2px solid #34d399;
 	outline-offset: 3px;
 }
+
+.wmp-pack-value {
+	margin: 4px 0 0;
+	font-size: 13px;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	color: #6ee7b7;
+	text-align: center;
+}

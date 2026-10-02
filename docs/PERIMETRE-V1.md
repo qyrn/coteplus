@@ -52,7 +52,9 @@ Le DOM ne contient aucun id de carte. Le lien entre une carte affichée et ses d
 
 ### Lot 1 : prix moyens
 
-- Badge de prix moyen sur toutes les cartes affichées : `/collection`, `/global-collection` (liste et carte ouverte), `/marketplace` (liste et détail), écran de révélation de `/pulls`, échanges
+- Badge de prix moyen sur toutes les cartes affichées, où qu'elles soient sur le site (collection, toutes les cartes, marché, paquets, échanges, profils, guilde, vitrines, messages)
+- Exception : aucune info ajoutée sur les routes de bataille (`/battle`, duels, parties), pour ne pas toucher au jeu en cours
+- Bonnes affaires sur le marché : écart de chaque enchère avec le prix moyen ("−35 % vs moyenne") et tri par écart
 - Source : `GET /api/marketplace/cards/{id}/sales?scope=summary`, champ `summary[rareté].average`
 - Chargement à l'apparition à l'écran, pas de chargement global au démarrage
 - Totaux par côté dans un échange (prix moyens plus wikibidous)
@@ -63,12 +65,13 @@ Le DOM ne contient aucun id de carte. Le lien entre une carte affichée et ses d
 - Alerte stock plein : badge sur l'icône, notification au seuil choisi, alarmes posées à partir d'une seule lecture de `/pulls`
 - Drop rate : répartition des raretés tirées, lue sur l'écran de révélation, stockée par compte, remise à zéro possible
 
-### Lot 3 : rappel d'enchères
+### Lot 3 : marché et enchères
 
 - Étoile "Suivre" sur le marché, suivi automatique des enchères où le joueur a misé
 - Popup "Mes enchères suivies" triée par fin
 - Rappel 5 min avant la fin par défaut, pas de délai sous 1 min
 - Zéro requête : heure de fin lue dans le DOM
+- Bilan du marché : gains des ventes, dépenses des achats, prix obtenu comparé au prix moyen, à partir de l'historique du marché
 
 ### Lot 4 : collection
 
@@ -76,6 +79,8 @@ Le DOM ne contient aucun id de carte. Le lien entre une carte affichée et ses d
 - Export CSV (séparateur `;`, BOM, protection contre l'injection de formules) et JSON
 - Vue tableau avec filtres et tris absents du site (ATK, DEF, doublons, date d'obtention)
 - Filtre "Non possédées" sur `/global-collection`
+- Valeur de la collection dans le temps : total et détail par rareté enregistrés à chaque synchro, courbe dans le popup
+- Garde-fou avant défausse : avertissement si la carte est le dernier exemplaire, en favori, ou vaut nettement plus aux enchères que le wikibidou rendu. Le joueur confirme ou annule lui-même
 - "Meilleures ventes" : cartes de la collection classées par prix moyen, avec le nombre de ventes récentes (liquidité), le nombre d'exemplaires et un repère "doublon" pour vendre sans perdre la carte. Aucun bouton de mise en vente : le joueur vend depuis le site
 
 ### Lot 5 : échanges
@@ -83,6 +88,7 @@ Le DOM ne contient aucun id de carte. Le lien entre une carte affichée et ses d
 - Évaluer une offre reçue : impact sur la collection, valeur de chaque côté, différence avec l'offre précédente pour une contre-offre
 - Comparer avec un ami : mes doublons qu'il n'a pas, ses doublons qui me manquent
 - Proposition d'échange équilibré affichée comme une liste à cocher, que le joueur reproduit lui-même dans le site
+- Souhaits de la guilde face à mes doublons : "X cherche telle carte, tu l'as en double". Le don se fait depuis le site
 
 ### Lot 6 : confort
 

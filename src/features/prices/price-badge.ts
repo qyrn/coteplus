@@ -27,16 +27,11 @@ export function findPriceBadge(cardElement: HTMLElement): HTMLElement | null {
 	return cardElement.querySelector<HTMLElement>(`.${PRICE_BADGE_CLASS}`);
 }
 
-export function renderPriceBadge(
-	cardElement: HTMLElement,
-	heading: HTMLElement,
-	state: PriceBadgeState,
-): void {
+export function renderPriceBadge(cardElement: HTMLElement, heading: HTMLElement, state: PriceBadgeState): void {
 	const badge = findPriceBadge(cardElement) ?? document.createElement("span");
 	badge.className = PRICE_BADGE_CLASS;
 	badge.dataset.state = state.kind;
 	badge.textContent = badgeText(state);
 	badge.title = "Prix moyen des ventes aux enchères pour cette rareté";
-	if (badge.previousElementSibling !== heading)
-		heading.insertAdjacentElement("afterend", badge);
+	if (badge.previousElementSibling !== heading) heading.insertAdjacentElement("afterend", badge);
 }

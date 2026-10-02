@@ -11,15 +11,11 @@ const searchResponse = {
 
 describe("findCardIdInSearch", () => {
 	it("matches the exact title and rarity", () => {
-		expect(findCardIdInSearch(searchResponse, "Miss Univers 2016", "SR")).toBe(
-			"c",
-		);
+		expect(findCardIdInSearch(searchResponse, "Miss Univers 2016", "SR")).toBe("c");
 	});
 
 	it("falls back to the first exact title", () => {
-		expect(findCardIdInSearch(searchResponse, "Miss Univers 2016", "L")).toBe(
-			"b",
-		);
+		expect(findCardIdInSearch(searchResponse, "Miss Univers 2016", "L")).toBe("b");
 	});
 
 	it("ignores fuzzy matches", () => {
@@ -41,8 +37,6 @@ describe("findCardIdInSearch", () => {
 
 describe("catalogSearchUrl", () => {
 	it("encodes the title", () => {
-		expect(catalogSearchUrl("Cléopâtre VII")).toBe(
-			"/api/cards?page=0&q=Cl%C3%A9op%C3%A2tre+VII&sort=rarity",
-		);
+		expect(catalogSearchUrl("Cléopâtre VII")).toBe("/api/cards?page=0&q=Cl%C3%A9op%C3%A2tre+VII&sort=rarity");
 	});
 });

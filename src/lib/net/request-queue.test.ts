@@ -1,11 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createRequestQueue, HttpError } from "./request-queue";
 
-function jsonResponse(
-	status: number,
-	body: unknown = {},
-	headers: Record<string, string> = {},
-): Response {
+function jsonResponse(status: number, body: unknown = {}, headers: Record<string, string> = {}): Response {
 	return new Response(JSON.stringify(body), { status, headers });
 }
 
@@ -32,9 +28,7 @@ describe("createRequestQueue", () => {
 			return jsonResponse(200, { ok: true });
 		};
 		const queue = createRequestQueue(baseOptions(fetcher));
-		await Promise.all(
-			Array.from({ length: 6 }, (_, index) => queue.getJson(`/r/${index}`)),
-		);
+		await Promise.all(Array.from({ length: 6 }, (_, index) => queue.getJson(`/r/${index}`)));
 		expect(peak).toBe(2);
 	});
 
@@ -62,17 +56,13 @@ describe("createRequestQueue", () => {
 
 	it("does not retry a client error", async () => {
 		const fetcher = vi.fn(async () => jsonResponse(404));
-		await expect(
-			createRequestQueue(baseOptions(fetcher)).getJson("/x"),
-		).rejects.toBeInstanceOf(HttpError);
+		await expect(createRequestQueue(baseOptions(fetcher)).getJson("/x")).rejects.toBeInstanceOf(HttpError);
 		expect(fetcher).toHaveBeenCalledTimes(1);
 	});
 
 	it("gives up after the retry budget", async () => {
 		const fetcher = vi.fn(async () => jsonResponse(500));
-		await expect(
-			createRequestQueue(baseOptions(fetcher)).getJson("/x"),
-		).rejects.toMatchObject({ status: 500 });
+		await expect(createRequestQueue(baseOptions(fetcher)).getJson("/x")).rejects.toMatchObject({ status: 500 });
 		expect(fetcher).toHaveBeenCalledTimes(3);
 	});
 });

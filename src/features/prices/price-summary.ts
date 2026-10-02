@@ -9,16 +9,12 @@ export function parsePriceSummary(json: unknown): PriceSummary {
 	for (const [rarity, entry] of Object.entries(summary)) {
 		if (!isRarity(rarity) || !isRecord(entry)) continue;
 		const average = entry.average;
-		if (typeof average === "number" && Number.isFinite(average) && average >= 0)
-			prices[rarity] = average;
+		if (typeof average === "number" && Number.isFinite(average) && average >= 0) prices[rarity] = average;
 	}
 	return prices;
 }
 
-export function pickAveragePrice(
-	summary: PriceSummary,
-	rarity: Rarity,
-): number | null {
+export function pickAveragePrice(summary: PriceSummary, rarity: Rarity): number | null {
 	const sameRarity = summary[rarity];
 	if (sameRarity !== undefined) return sameRarity;
 	const knownPrices = RARITIES.map((candidate) => summary[candidate]).filter(

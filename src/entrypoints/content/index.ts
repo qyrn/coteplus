@@ -13,8 +13,7 @@ export default defineContentScript({
 			minIntervalMs: 50,
 			maxRetries: 3,
 			baseBackoffMs: 1000,
-			fetcher: (url) =>
-				fetch(new URL(url, location.origin), { credentials: "include" }),
+			fetcher: (url) => fetch(new URL(url, location.origin), { credentials: "include" }),
 		});
 		startAveragePrices(ctx, createPriceService(siteApi));
 	},

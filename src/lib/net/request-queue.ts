@@ -67,15 +67,10 @@ export function createRequestQueue(options: RequestQueueOptions): RequestQueue {
 				continue;
 			}
 			if (response.ok) return response.json();
-			if (
-				!isRetryableStatus(response.status) ||
-				attempt >= options.maxRetries
-			) {
+			if (!isRetryableStatus(response.status) || attempt >= options.maxRetries) {
 				throw new HttpError(response.status, url);
 			}
-			await sleep(
-				readRetryAfterMs(response) ?? options.baseBackoffMs * 2 ** attempt,
-			);
+			await sleep(readRetryAfterMs(response) ?? options.baseBackoffMs * 2 ** attempt);
 		}
 	}
 
@@ -91,16 +86,11 @@ export function createRequestQueue(options: RequestQueueOptions): RequestQueue {
 	}
 
 	function takeNext(): PendingRequest | undefined {
-		return (
-			pendingByPriority.visible.shift() ?? pendingByPriority.background.shift()
-		);
+		return pendingByPriority.visible.shift() ?? pendingByPriority.background.shift();
 	}
 
 	function hasPending(): boolean {
-		return (
-			pendingByPriority.visible.length > 0 ||
-			pendingByPriority.background.length > 0
-		);
+		return pendingByPriority.visible.length > 0 || pendingByPriority.background.length > 0;
 	}
 
 	function pump(): void {

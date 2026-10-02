@@ -31,11 +31,7 @@ describe("parseCollectionPage", () => {
 
 describe("collectionPageUrl", () => {
 	it("asks for stats only on the first page", () => {
-		expect(collectionPageUrl(0)).toBe(
-			"/api/my-collection?sort=rarity&page=0&stats=1",
-		);
-		expect(collectionPageUrl(3)).toBe(
-			"/api/my-collection?sort=rarity&page=3&stats=0",
-		);
+		expect(collectionPageUrl(0)).toBe("/api/my-collection?sort=rarity&page=0&stats=1");
+		expect(collectionPageUrl(3)).toBe("/api/my-collection?sort=rarity&page=3&stats=0");
 	});
 });

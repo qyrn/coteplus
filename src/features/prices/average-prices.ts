@@ -1,12 +1,11 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
-import { type CardView, findCards, readCard } from "../../lib/site/card-dom";
+import { type CardView, readCard } from "../../lib/site/card-dom";
 import type { PageWatcher } from "../../lib/site/page-watcher";
-import { isBattleRoute } from "../../lib/site/routes";
+import { handleCardsWhenVisible } from "../../lib/site/visible-cards";
 import { findPriceBadge, type PriceBadgeState, renderPriceBadge } from "./price-badge";
 import type { PriceService } from "./price-service";
 
 const RENDERED_TITLE_ATTRIBUTE = "data-wmp-price-for";
-const PRELOAD_MARGIN = "300px";
 
 function isRenderedFor(card: CardView): boolean {
 	return card.element.getAttribute(RENDERED_TITLE_ATTRIBUTE) === card.title && findPriceBadge(card.element) !== null;
@@ -38,23 +37,8 @@ export function startAveragePrices(
 	pageWatcher: PageWatcher,
 	priceService: PriceService,
 ): void {
-	const visibilityObserver = new IntersectionObserver(
-		(entries) => {
-			for (const entry of entries) {
-				if (!entry.isIntersecting || !(entry.target instanceof HTMLElement)) continue;
-				visibilityObserver.unobserve(entry.target);
-				const card = readCard(entry.target);
-				if (card && !isRenderedFor(card)) void showAveragePrice(card, priceService);
-			}
-		},
-		{ rootMargin: PRELOAD_MARGIN },
-	);
-	ctx.onInvalidated(() => visibilityObserver.disconnect());
-
-	pageWatcher.subscribe(() => {
-		if (isBattleRoute(location.pathname)) return;
-		for (const card of findCards(document.body)) {
-			if (!isRenderedFor(card)) visibilityObserver.observe(card.element);
-		}
+	handleCardsWhenVisible(ctx, pageWatcher, {
+		isHandled: isRenderedFor,
+		onVisible: (card) => void showAveragePrice(card, priceService),
 	});
 }

@@ -114,4 +114,4 @@ Détails dans `ANALYSE.md`.
 - Prolongation d'enchère : une mise dans les 10 dernières secondes ajoute 60 secondes. Un rappel 5 min avant la fin n'est pas concerné
 - Collection d'un non-ami : lisible, même format que la sienne
 
-Reste à vérifier : le compte à rebours de `/pulls` après une ouverture depuis un stock plein (10/10). Le joueur ouvre un paquet lui-même et relève le compte à rebours affiché juste après.
+- Paquets : après une ouverture depuis un stock plein (10/10), le compte à rebours repart de zéro au moment de l'ouverture (environ 10 min, relevé par le joueur le 3 octobre 2026). Le temps passé à 10/10 est donc perdu, ce qui justifie l'alerte "stock plein"

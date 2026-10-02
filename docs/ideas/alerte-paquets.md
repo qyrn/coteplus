@@ -301,3 +301,7 @@ Le popup montre aussi l'état lu : stock, prochain paquet, Pro détecté ou non,
 3. Au passage Pro vers normal, comment le serveur traite-t-il le temps déjà écoulé ?
 4. La régénération continue-t-elle pendant une sanction ?
 5. Le développeur du site accepterait-il d'ajouter une notification "paquets pleins" à son Web Push ? Ce serait plus fiable que toute extension
+
+## Vérifié sur une session réelle
+
+Le 3 octobre 2026 : après une ouverture depuis un stock plein (10/10), le compte à rebours affiche environ 10 min. La régénération repart du moment de l'ouverture. Tant que le stock reste à 10/10, aucun temps n'est accumulé.

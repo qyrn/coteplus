@@ -161,3 +161,28 @@
 	color: #ecfdf5;
 	text-decoration: underline;
 }
+
+.wmp-deal-chip {
+	display: inline-block;
+	margin-left: 6px;
+	padding: 0 5px;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 16px;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+	color: #a3aca7;
+	background: rgb(163 172 167 / 0.12);
+}
+
+.wmp-deal-chip[data-level="great"] {
+	color: #0c0d0c;
+	background: #34d399;
+}
+
+.wmp-great-deal {
+	border-radius: 18px;
+	outline: 2px solid #34d399;
+	outline-offset: 3px;
+}

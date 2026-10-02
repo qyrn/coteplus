@@ -1,4 +1,6 @@
 reference/
 node_modules/
-dist/
+.output/
+.wxt/
+web-ext-artifacts/
 .env

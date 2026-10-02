@@ -7,7 +7,7 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"includes": ["**", "!docs", "!.output", "!.wxt"]
+		"includes": ["**", "!docs", "!dist", "!.wxt"]
 	},
 	"formatter": {
 		"enabled": true,

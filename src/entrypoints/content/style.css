@@ -226,3 +226,34 @@
 	color: #fecaca;
 	background: rgb(239 68 68 / 0.25);
 }
+
+.wmp-follow-button {
+	display: block;
+	margin: 6px auto 0;
+	padding: 3px 10px;
+	border-radius: 999px;
+	border: 1px solid rgb(163 172 167 / 0.35);
+	background: transparent;
+	color: #a3aca7;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.wmp-follow-button[aria-pressed="true"] {
+	border-color: rgb(52 211 153 / 0.6);
+	color: #6ee7b7;
+	background: rgb(52 211 153 / 0.1);
+}
+
+.wmp-follow-button:hover,
+.wmp-follow-button:focus-visible {
+	border-color: #34d399;
+	color: #ecfdf5;
+	outline: none;
+}
+
+.wmp-follow-button:disabled {
+	opacity: 0.5;
+	cursor: wait;
+}

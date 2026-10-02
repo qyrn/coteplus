@@ -1,4 +1,5 @@
 import type { Rarity } from "../../lib/site/rarity";
+import type { FoundImage } from "./found-image";
 
 const COVER_CLASS = "wmp-card-cover";
 const MAX_INITIALS = 2;
@@ -33,11 +34,12 @@ export function showCover(placeholder: HTMLImageElement, title: string, rarity: 
 	container.append(cover);
 }
 
-export function showImage(placeholder: HTMLImageElement, url: string, title: string, rarity: Rarity): void {
+export function showImage(placeholder: HTMLImageElement, image: FoundImage, title: string, rarity: Rarity): void {
 	placeholder.addEventListener("error", () => showCover(placeholder, title, rarity), { once: true });
 	placeholder.removeAttribute("srcset");
 	placeholder.removeAttribute("sizes");
 	for (const [property, value] of Object.entries(FILLED_IMAGE_STYLE)) placeholder.style.setProperty(property, value);
 	placeholder.alt = title;
-	placeholder.src = url;
+	if (image.credit) placeholder.title = image.credit;
+	placeholder.src = image.url;
 }

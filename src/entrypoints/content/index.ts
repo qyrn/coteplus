@@ -11,6 +11,7 @@ import { createRequestQueue } from "../../lib/net/request-queue";
 import { createPageWatcher } from "../../lib/site/page-watcher";
 
 const WIKIMEDIA_USER_AGENT = "WikiMastersPlus/0.1 (extension navigateur)";
+const OPENVERSE_MIN_INTERVAL_MS = 3000;
 
 export default defineContentScript({
 	matches: ["https://www.wiki-masters.com/*"],
@@ -30,12 +31,20 @@ export default defineContentScript({
 			baseBackoffMs: 1000,
 			fetcher: (url) => fetch(url, { credentials: "omit", headers: { "Api-User-Agent": WIKIMEDIA_USER_AGENT } }),
 		});
+		const openverseApi = createRequestQueue({
+			concurrency: 1,
+			minIntervalMs: OPENVERSE_MIN_INTERVAL_MS,
+			maxRetries: 0,
+			baseBackoffMs: 0,
+			fetcher: (url) => fetch(url, { credentials: "omit" }),
+		});
 		const pageWatcher = createPageWatcher(ctx);
 		const catalog = createCardCatalog(siteApi);
 		const priceService = createPriceService(siteApi, catalog);
+		const imageService = createCardImageService({ wikimediaApi, openverseApi });
 		startCollectionAutoSync(pageWatcher, catalog);
 		startAveragePrices(ctx, pageWatcher, priceService);
 		startBulkPriceToolbar(pageWatcher, priceService);
-		startMissingImages(ctx, pageWatcher, catalog, createCardImageService(wikimediaApi));
+		startMissingImages(ctx, pageWatcher, catalog, imageService);
 	},
 });

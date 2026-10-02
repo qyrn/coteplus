@@ -1,5 +1,6 @@
 import { isRecord } from "../../lib/json";
 import type { RequestQueue } from "../../lib/net/request-queue";
+import type { FoundImage } from "./found-image";
 
 const THUMBNAIL_WIDTH = 480;
 const WIKIDATA_IMAGE_PROPERTIES = ["P18", "P154", "P41", "P94", "P242"] as const;
@@ -73,11 +74,11 @@ export function commonsFileUrl(fileName: string): string {
 	return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodedName}?width=${THUMBNAIL_WIDTH}`;
 }
 
-export async function findFreeImage(title: string, wikimediaApi: RequestQueue): Promise<string | null> {
+export async function findWikimediaImage(title: string, wikimediaApi: RequestQueue): Promise<FoundImage | null> {
 	const page = parseWikipediaPageImage(await wikimediaApi.getJson(frenchWikipediaImageUrl(title)));
-	if (page.thumbnailUrl) return page.thumbnailUrl;
+	if (page.thumbnailUrl) return { url: page.thumbnailUrl, credit: null };
 	if (!page.wikidataId) return null;
 	const claims = await wikimediaApi.getJson(wikidataClaimsUrl(page.wikidataId));
 	const fileName = pickWikidataImageFile(claims, page.wikidataId);
-	return fileName ? commonsFileUrl(fileName) : null;
+	return fileName ? { url: commonsFileUrl(fileName), credit: null } : null;
 }

@@ -21,10 +21,10 @@ async function fillMissingImage(card: CardView, catalog: CardCatalog, imageServi
 	card.element.setAttribute(HANDLED_TITLE_ATTRIBUTE, card.title);
 	const cardRef = await catalog.resolve(card.title, card.rarity).catch(() => null);
 	if (cardRef?.hideImage) return;
-	const url = await imageService.findImage(card.title).catch(() => null);
+	const image = await imageService.findImage(card.title).catch(() => null);
 	const placeholder = findPlaceholder(card);
 	if (!placeholder || readCard(card.element)?.title !== card.title) return;
-	if (url) showImage(placeholder, url, card.title, card.rarity);
+	if (image) showImage(placeholder, image, card.title, card.rarity);
 	else showCover(placeholder, card.title, card.rarity);
 }
 

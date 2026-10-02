@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { commonsFileUrl, findFreeImage, parseWikipediaPageImage, pickWikidataImageFile } from "./wikimedia-image";
+import { commonsFileUrl, findWikimediaImage, parseWikipediaPageImage, pickWikidataImageFile } from "./wikimedia-image";
 
 describe("parseWikipediaPageImage", () => {
 	it("reads the thumbnail and the Wikidata id", () => {
@@ -42,7 +42,7 @@ describe("commonsFileUrl", () => {
 	});
 });
 
-describe("findFreeImage", () => {
+describe("findWikimediaImage", () => {
 	it("falls back to Wikidata when Wikipedia has no free image", async () => {
 		const responses = new Map<string, unknown>([
 			["fr.wikipedia.org", { query: { pages: [{ pageprops: { wikibase_item: "Q90" } }] } }],
@@ -52,8 +52,9 @@ describe("findFreeImage", () => {
 			],
 		]);
 		const queue = { getJson: async (url: string) => responses.get(new URL(url).hostname) };
-		expect(await findFreeImage("Paris", queue)).toBe(
-			"https://commons.wikimedia.org/wiki/Special:FilePath/Paris.jpg?width=480",
-		);
+		expect(await findWikimediaImage("Paris", queue)).toEqual({
+			url: "https://commons.wikimedia.org/wiki/Special:FilePath/Paris.jpg?width=480",
+			credit: null,
+		});
 	});
 });

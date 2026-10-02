@@ -1,0 +1,197 @@
+:root {
+	color-scheme: dark;
+	--background: #0c0d0c;
+	--surface: #141615;
+	--border: #2e3431;
+	--foreground: #ecfdf5;
+	--muted: #a3aca7;
+	--accent: #34d399;
+	--rarity-c: #b8f2d5;
+	--rarity-pc: #b1cff2;
+	--rarity-r: #c6a7f2;
+	--rarity-sr: #ed6fa3;
+	--rarity-ur: #fa9931;
+	--rarity-l: #ffe144;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	width: 340px;
+	margin: 0;
+	padding: 12px;
+	background: var(--background);
+	color: var(--foreground);
+	font:
+		13px / 1.4 system-ui,
+		-apple-system,
+		"Segoe UI",
+		sans-serif;
+}
+
+h1,
+h2,
+p {
+	margin: 0;
+}
+
+.popup-header h1 {
+	font-size: 15px;
+	font-weight: 700;
+	letter-spacing: 0.01em;
+}
+
+.popup-section {
+	margin-top: 12px;
+	padding: 10px 12px;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	background: var(--surface);
+}
+
+.section-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 6px;
+}
+
+.section-head h2 {
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--muted);
+}
+
+.link-button {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--accent);
+	font: inherit;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.link-button:hover,
+.link-button:focus-visible {
+	text-decoration: underline;
+	outline: none;
+}
+
+.pack-stock {
+	font-size: 22px;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+.muted {
+	color: var(--muted);
+	font-size: 12px;
+}
+
+.auction-list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.auction-row {
+	display: grid;
+	grid-template-columns: 30px 1fr 24px;
+	align-items: center;
+	gap: 6px;
+}
+
+.auction-row[data-ended="true"] {
+	opacity: 0.5;
+}
+
+.rarity-pill {
+	font-size: 11px;
+	font-weight: 700;
+	text-align: center;
+	color: var(--rarity-color, var(--muted));
+}
+
+.rarity-pill[data-rarity="C"] {
+	--rarity-color: var(--rarity-c);
+}
+
+.rarity-pill[data-rarity="PC"] {
+	--rarity-color: var(--rarity-pc);
+}
+
+.rarity-pill[data-rarity="R"] {
+	--rarity-color: var(--rarity-r);
+}
+
+.rarity-pill[data-rarity="SR"] {
+	--rarity-color: var(--rarity-sr);
+}
+
+.rarity-pill[data-rarity="UR"] {
+	--rarity-color: var(--rarity-ur);
+}
+
+.rarity-pill[data-rarity="L"] {
+	--rarity-color: var(--rarity-l);
+}
+
+.auction-open {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	padding: 4px 6px;
+	border: 0;
+	border-radius: 6px;
+	background: none;
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.auction-open:hover,
+.auction-open:focus-visible {
+	background: rgb(52 211 153 / 0.08);
+	outline: none;
+}
+
+.auction-title {
+	overflow: hidden;
+	font-weight: 600;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.auction-time {
+	font-size: 11px;
+	font-variant-numeric: tabular-nums;
+	color: var(--muted);
+}
+
+.auction-unfollow {
+	width: 24px;
+	height: 24px;
+	border: 0;
+	border-radius: 6px;
+	background: none;
+	color: var(--muted);
+	font-size: 16px;
+	cursor: pointer;
+}
+
+.auction-unfollow:hover,
+.auction-unfollow:focus-visible {
+	background: rgb(239 68 68 / 0.15);
+	color: #fecaca;
+	outline: none;
+}

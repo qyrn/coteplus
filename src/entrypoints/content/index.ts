@@ -4,6 +4,7 @@ import { createCardCatalog } from "../../features/cards/card-catalog";
 import { startCollectionAutoSync } from "../../features/cards/collection-auto-sync";
 import { createCardImageService } from "../../features/images/card-image-service";
 import { startMissingImages } from "../../features/images/missing-images";
+import { startPackStockWatcher } from "../../features/packs/pack-stock-watcher";
 import { startAveragePrices } from "../../features/prices/average-prices";
 import { startBulkPriceToolbar } from "../../features/prices/bulk-price-toolbar";
 import { createPriceService } from "../../features/prices/price-service";
@@ -46,5 +47,6 @@ export default defineContentScript({
 		startAveragePrices(ctx, pageWatcher, priceService);
 		startBulkPriceToolbar(pageWatcher, priceService);
 		startMissingImages(ctx, pageWatcher, catalog, imageService);
+		startPackStockWatcher(pageWatcher);
 	},
 });

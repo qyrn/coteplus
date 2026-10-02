@@ -1,5 +1,6 @@
 import { browser } from "wxt/browser";
 import { defineBackground } from "wxt/utils/define-background";
+import { startPackAlert } from "../features/packs/pack-alert-background";
 import { CACHE_NAMESPACES, RETIRED_CACHE_NAMESPACES } from "../lib/cache/namespaces";
 import { purgeExpiredEntries, removeNamespaces } from "../lib/cache/ttl-store";
 
@@ -8,6 +9,7 @@ function purgeCaches(): void {
 }
 
 export default defineBackground(() => {
+	startPackAlert();
 	browser.runtime.onStartup.addListener(purgeCaches);
 	browser.runtime.onInstalled.addListener(() => {
 		purgeCaches();

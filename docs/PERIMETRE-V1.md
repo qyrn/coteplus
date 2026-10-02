@@ -71,6 +71,8 @@ Le DOM ne contient aucun id de carte. Le lien entre une carte affichée et ses d
 - Popup "Mes enchères suivies" triée par fin
 - Rappel 5 min avant la fin par défaut, pas de délai sous 1 min
 - Zéro requête : heure de fin lue dans le DOM
+- Souhait vers enchères : quand le joueur ajoute une carte à sa liste de souhaits (bouton "Ajouter à la liste de souhaits"), l'extension attend que le site confirme l'ajout (le bouton passe à "Retirer de la liste de souhaits"), puis ouvre `/marketplace` avec un panneau listant les enchères en cours de cette carte. Les enchères dont le prix à payer est le plus bas par rapport au prix moyen de leur rareté sont encadrées. Si aucune enchère n'existe, le panneau le dit. Réglage pour désactiver la redirection
+- Source : `GET /api/marketplace?page=1&limit=50&sort=recent&q={titre}`, filtré sur `card_id`, prix à payer = `effective_bid` ou, à défaut, `current_bid` puis `base_amount`, comparé au prix moyen de `snapshot_rarity`
 - Bilan du marché : gains des ventes, dépenses des achats, prix obtenu comparé au prix moyen, à partir de l'historique du marché
 
 ### Lot 4 : collection

@@ -1,7 +1,7 @@
 import { CACHE_NAMESPACES } from "../../lib/cache/namespaces";
 import { createTtlStore } from "../../lib/cache/ttl-store";
 import type { RequestPriority, RequestQueue } from "../../lib/net/request-queue";
-import type { Rarity } from "../../lib/site/rarity";
+import { RARITIES, type Rarity } from "../../lib/site/rarity";
 import { catalogSearchUrl, findCardIdInSearch } from "./catalog-search";
 import { type CollectionIndexer, createCollectionIndexer, type OwnedCardRef } from "./collection-index";
 import { type PriceSummary, parsePriceSummary, pickAveragePrice } from "./price-summary";
@@ -11,6 +11,7 @@ const CARD_ID_TTL_MS = 180 * DAY_MS;
 const UNKNOWN_CARD_TTL_MS = DAY_MS;
 const PRICE_SUMMARY_TTL_MS = 14 * DAY_MS;
 const PRICE_REFRESH_AFTER_MS = DAY_MS;
+const BULK_LOAD_WORKERS = 4;
 
 interface CardIdLookup {
 	cardId: string | null;
@@ -21,13 +22,34 @@ export interface AveragePrice {
 	refreshed: Promise<number | null> | null;
 }
 
+export interface BulkLoadProgress {
+	done: number;
+	total: number;
+	failed: number;
+}
+
+export interface BulkLoadOptions {
+	signal: AbortSignal;
+	onProgress: (progress: BulkLoadProgress) => void;
+}
+
 export interface PriceService {
 	collectionIndexer: CollectionIndexer;
 	getAveragePrice(title: string, rarity: Rarity): Promise<AveragePrice>;
+	loadAllOwnedPrices(options: BulkLoadOptions): Promise<BulkLoadProgress>;
 }
 
 function cardKey(title: string, rarity: Rarity): string {
 	return `${rarity}:${title}`;
+}
+
+function isFresh(storedAt: number): boolean {
+	return Date.now() - storedAt <= PRICE_REFRESH_AFTER_MS;
+}
+
+function uniqueCardIdsByRarityDesc(cards: OwnedCardRef[]): string[] {
+	const sorted = [...cards].sort((left, right) => RARITIES.indexOf(right.rarity) - RARITIES.indexOf(left.rarity));
+	return [...new Set(sorted.map((card) => card.cardId))];
 }
 
 export function createPriceService(queue: RequestQueue): PriceService {
@@ -82,13 +104,34 @@ export function createPriceService(queue: RequestQueue): PriceService {
 					refreshed: null,
 				};
 			}
-			const isStale = Date.now() - cached.storedAt > PRICE_REFRESH_AFTER_MS;
 			return {
 				average: pickAveragePrice(cached.value, rarity),
-				refreshed: isStale
-					? fetchSummary(cardId, "background").then((summary) => pickAveragePrice(summary, rarity))
-					: null,
+				refreshed: isFresh(cached.storedAt)
+					? null
+					: fetchSummary(cardId, "background").then((summary) => pickAveragePrice(summary, rarity)),
 			};
+		},
+		async loadAllOwnedPrices({ signal, onProgress }) {
+			const cardIds = uniqueCardIdsByRarityDesc(await collectionIndexer.syncNow());
+			const progress: BulkLoadProgress = { done: 0, total: cardIds.length, failed: 0 };
+			onProgress({ ...progress });
+			let nextIndex = 0;
+			async function work(): Promise<void> {
+				while (!signal.aborted && nextIndex < cardIds.length) {
+					const cardId = cardIds[nextIndex++];
+					if (cardId === undefined) return;
+					const cached = await summaryStore.get(cardId);
+					if (!cached || !isFresh(cached.storedAt)) {
+						await fetchSummary(cardId, "background").catch(() => {
+							progress.failed++;
+						});
+					}
+					progress.done++;
+					onProgress({ ...progress });
+				}
+			}
+			await Promise.all(Array.from({ length: BULK_LOAD_WORKERS }, work));
+			return { ...progress };
 		},
 	};
 }

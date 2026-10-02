@@ -1,0 +1,87 @@
+import type { PageWatcher } from "../../lib/site/page-watcher";
+import type { PriceService } from "../prices/price-service";
+import { readTradeSides, type TradeSide, tradeKey } from "./trade-side";
+
+const TRADE_SELECTOR = 'button[aria-label="Voir le détail de l\'échange"]';
+const HANDLED_KEY_ATTRIBUTE = "data-wmp-trade-for";
+const SIDE_VALUE_CLASS = "wmp-trade-side-value";
+const BALANCE_CLASS = "wmp-trade-balance";
+
+const amountFormatter = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+
+export interface SideValue {
+	total: number;
+	unpricedCards: number;
+}
+
+export function sideValueText(value: SideValue): string {
+	const unpriced = value.unpricedCards > 0 ? ` (${value.unpricedCards} sans prix)` : "";
+	return `≈ ${amountFormatter.format(value.total)} W${unpriced}`;
+}
+
+export function balanceText(mine: SideValue, theirs: SideValue): string {
+	const balance = Math.round(theirs.total - mine.total);
+	if (balance === 0) return "Échange équilibré";
+	const sign = balance > 0 ? "+" : "−";
+	return `Bilan pour toi : ${sign}${amountFormatter.format(Math.abs(balance))} W`;
+}
+
+async function estimateSideValue(side: TradeSide, priceService: PriceService): Promise<SideValue> {
+	const averages = await Promise.all(
+		side.cards.map((card) =>
+			priceService
+				.getAveragePrice(card.title, card.rarity)
+				.then((price) => price.average)
+				.catch(() => null),
+		),
+	);
+	const priced = averages.filter((average): average is number => average !== null);
+	return {
+		total: side.wikibidous + priced.reduce((sum, average) => sum + average, 0),
+		unpricedCards: averages.length - priced.length,
+	};
+}
+
+function renderSideValue(side: TradeSide, value: SideValue): void {
+	const line = side.container.querySelector(`.${SIDE_VALUE_CLASS}`) ?? document.createElement("p");
+	line.className = SIDE_VALUE_CLASS;
+	line.textContent = sideValueText(value);
+	if (!line.isConnected) side.container.append(line);
+}
+
+function renderBalance(trade: HTMLElement, text: string, balanceSign: number): void {
+	const header = trade.firstElementChild;
+	if (!header) return;
+	const chip = header.querySelector<HTMLElement>(`.${BALANCE_CLASS}`) ?? document.createElement("span");
+	chip.className = BALANCE_CLASS;
+	chip.dataset.sign = balanceSign > 0 ? "positive" : balanceSign < 0 ? "negative" : "even";
+	chip.textContent = text;
+	if (!chip.isConnected) header.append(chip);
+}
+
+async function showTradeValues(trade: HTMLElement, sides: TradeSide[], priceService: PriceService): Promise<void> {
+	const key = tradeKey(sides);
+	trade.setAttribute(HANDLED_KEY_ATTRIBUTE, key);
+	const values = await Promise.all(sides.map((side) => estimateSideValue(side, priceService)));
+	if (trade.getAttribute(HANDLED_KEY_ATTRIBUTE) !== key) return;
+	sides.forEach((side, index) => {
+		const value = values[index];
+		if (value) renderSideValue(side, value);
+	});
+	const mineIndex = sides.findIndex((side) => side.isMine);
+	const theirsIndex = sides.findIndex((side) => !side.isMine);
+	const mine = values[mineIndex];
+	const theirs = values[theirsIndex];
+	if (mine && theirs) renderBalance(trade, balanceText(mine, theirs), Math.round(theirs.total - mine.total));
+}
+
+export function startTradeValues(pageWatcher: PageWatcher, priceService: PriceService): void {
+	pageWatcher.subscribe(() => {
+		if (location.pathname !== "/trades") return;
+		for (const trade of document.querySelectorAll<HTMLElement>(TRADE_SELECTOR)) {
+			const sides = readTradeSides(trade);
+			if (sides.length === 0 || trade.getAttribute(HANDLED_KEY_ATTRIBUTE) === tradeKey(sides)) continue;
+			void showTradeValues(trade, sides, priceService);
+		}
+	});
+}

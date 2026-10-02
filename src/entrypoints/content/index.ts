@@ -13,6 +13,7 @@ import { createRevealWatcher } from "../../features/packs/reveal-watcher";
 import { startAveragePrices } from "../../features/prices/average-prices";
 import { startBulkPriceToolbar } from "../../features/prices/bulk-price-toolbar";
 import { createPriceService } from "../../features/prices/price-service";
+import { startTradeValues } from "../../features/trades/trade-values";
 import { createRequestQueue } from "../../lib/net/request-queue";
 import { createPageWatcher } from "../../lib/site/page-watcher";
 
@@ -52,6 +53,7 @@ export default defineContentScript({
 		startAveragePrices(ctx, pageWatcher, priceService);
 		startBulkPriceToolbar(pageWatcher, priceService);
 		startMarketDeals(ctx, pageWatcher, priceService);
+		startTradeValues(pageWatcher, priceService);
 		startMissingImages(ctx, pageWatcher, catalog, imageService);
 		startPackStockWatcher(pageWatcher);
 		const revealWatcher = createRevealWatcher(pageWatcher);

@@ -195,3 +195,34 @@
 	color: #6ee7b7;
 	text-align: center;
 }
+
+.wmp-trade-side-value {
+	margin: 4px 0 0;
+	font-size: 11px;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	color: #a3aca7;
+}
+
+.wmp-trade-balance {
+	margin-left: 8px;
+	padding: 0 6px;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 18px;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+	color: #a3aca7;
+	background: rgb(163 172 167 / 0.12);
+}
+
+.wmp-trade-balance[data-sign="positive"] {
+	color: #0c0d0c;
+	background: #34d399;
+}
+
+.wmp-trade-balance[data-sign="negative"] {
+	color: #fecaca;
+	background: rgb(239 68 68 / 0.25);
+}

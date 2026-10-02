@@ -27,7 +27,7 @@ export function compareToAverage(price: number, average: number): AuctionDeal | 
 }
 
 export function parseAmount(text: string): number | null {
-	const digits = text.replace(/s/g, "");
+	const digits = text.replace(/\s/g, "");
 	return /^\d+$/.test(digits) ? Number(digits) : null;
 }
 

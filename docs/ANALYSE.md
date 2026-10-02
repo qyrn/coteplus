@@ -92,3 +92,8 @@ Sur le marché, la carte est dans `div#marketplace-auction-{uuid}` > `a.card-fra
 - `GET /api/my-collection/stats?sort=rarity` : `{total, rarityCounts{C,PC,R,SR,UR,L}, tagOptions}`
 - `GET /api/marketplace/cards/{id}/sales?scope=summary` sans Pro : `{isPro, wikipedia_title, summary{[rareté]{average}}}`. Pas de `count` ni `latest` pour un compte non Pro
 - `GET /api/cards?page=0&q={texte}&sort=rarity` : `{cards, total, searchHasMore, rarityCounts, friendOwners, ownedCardIds, wishlistCardIds}`. Recherche plein texte : il faut filtrer sur `wikipedia_title` exact pour retrouver l'id d'une carte affichée
+- `GET /api/trades` : `{trades}`. Un item d'échange : `{id, card, card_id, is_shiny, trade_id, offered_by, snapshot_atk, snapshot_def, user_card_id, snapshot_rarity}`. La rareté figée existe donc dans les échanges, pas dans la collection
+- `GET /api/marketplace?page=1&limit=20&sort=recent` : `{auctions, page, limit, hasMore}`. Une enchère porte directement `card_id`, `snapshot_rarity`, `end_at`, `current_bid`, `effective_bid`, `final_price`, `status`, `owned`
+- `GET /api/marketplace/{id}` : `{auction, bids}`, même forme d'enchère que la liste
+- `GET /api/profile/{pseudo}/collection` répond aussi pour un joueur qui n'est pas ami : `{collection, total, rarityCounts, tagOptions, profileId, pendingTradeCardIds}`, 50 lignes par page
+- Enchères : une mise dans les 10 dernières secondes prolonge la fin de 60 secondes (texte affiché sur la page détail, chunk `14hf_bxikl5bw.js`). Mise : `POST /api/marketplace/{id}/bid` `{amount}`, entier, au moins 1

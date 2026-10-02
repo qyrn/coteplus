@@ -103,11 +103,13 @@ Le DOM ne contient aucun id de carte. Le lien entre une carte affichée et ses d
 
 - Synchronisation des réglages entre appareils
 
-## Points à vérifier sur une vraie session
+## Points vérifiés sur une vraie session
 
-À faire en lecture seule, compte connecté, avant de coder les lots concernés :
-- présence de `snapshot_rarity` dans `/api/trades` et `/api/my-collection` ;
-- contenu exact de `/api/my-collection/stats` ;
-- prolongation d'une enchère après une mise tardive ;
-- comportement de `packs_last_regen_at` après une ouverture ;
-- réponse de `/api/profile/{pseudo}/collection` pour un non-ami.
+Détails dans `ANALYSE.md`.
+
+- `snapshot_rarity` : présent dans les échanges et les enchères, absent de la collection
+- `/api/my-collection/stats` : `{total, rarityCounts, tagOptions}`
+- Prolongation d'enchère : une mise dans les 10 dernières secondes ajoute 60 secondes. Un rappel 5 min avant la fin n'est pas concerné
+- Collection d'un non-ami : lisible, même format que la sienne
+
+Reste à vérifier : le compte à rebours de `/pulls` après une ouverture depuis un stock plein (10/10). Le joueur ouvre un paquet lui-même et relève le compte à rebours affiché juste après.

@@ -3,9 +3,9 @@ import { isRecord } from "../../lib/json";
 import type { RequestQueue } from "../../lib/net/request-queue";
 import { normalizeTitle } from "../../lib/site/card-dom";
 import { isRarity, type Rarity } from "../../lib/site/rarity";
+import { type CardRef, readHideImage } from "./card-ref";
 
-export interface OwnedCardRef {
-	cardId: string;
+export interface OwnedCardRef extends CardRef {
 	title: string;
 	rarity: Rarity;
 }
@@ -31,7 +31,7 @@ function readOwnedCard(row: unknown): OwnedCardRef | null {
 	if (typeof id !== "string" || typeof title !== "string" || typeof rarity !== "string" || !isRarity(rarity)) {
 		return null;
 	}
-	return { cardId: id, title: normalizeTitle(title), rarity };
+	return { cardId: id, hideImage: readHideImage(row.card), title: normalizeTitle(title), rarity };
 }
 
 export function parseCollectionPage(json: unknown): CollectionPage {

@@ -1,0 +1,60 @@
+import { CACHE_NAMESPACES } from "../../lib/cache/namespaces";
+import { createTtlStore } from "../../lib/cache/ttl-store";
+import type { RequestQueue } from "../../lib/net/request-queue";
+import type { Rarity } from "../../lib/site/rarity";
+import type { CardRef } from "./card-ref";
+import { catalogSearchUrl, findCardInSearch } from "./catalog-search";
+import { type CollectionIndexer, createCollectionIndexer } from "./collection-index";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const CARD_REF_TTL_MS = 180 * DAY_MS;
+const UNKNOWN_CARD_TTL_MS = DAY_MS;
+
+interface CardLookup {
+	card: CardRef | null;
+}
+
+export interface CardCatalog {
+	collectionIndexer: CollectionIndexer;
+	resolve(title: string, rarity: Rarity): Promise<CardRef | null>;
+}
+
+function cardKey(title: string, rarity: Rarity): string {
+	return `${rarity}:${title}`;
+}
+
+export function createCardCatalog(queue: RequestQueue): CardCatalog {
+	const lookupStore = createTtlStore<CardLookup>(CACHE_NAMESPACES.cardRefByTitle);
+	const inFlight = new Map<string, Promise<CardRef | null>>();
+	const collectionIndexer = createCollectionIndexer(queue, (cards) =>
+		lookupStore.setMany(
+			cards.map(
+				(card) =>
+					[cardKey(card.title, card.rarity), { card: { cardId: card.cardId, hideImage: card.hideImage } }] as const,
+			),
+			CARD_REF_TTL_MS,
+		),
+	);
+
+	async function lookup(title: string, rarity: Rarity): Promise<CardRef | null> {
+		const key = cardKey(title, rarity);
+		await collectionIndexer.whenIdle();
+		const cached = await lookupStore.get(key);
+		if (cached) return cached.value.card;
+		const card = findCardInSearch(await queue.getJson(catalogSearchUrl(title)), title, rarity);
+		await lookupStore.set(key, { card }, card ? CARD_REF_TTL_MS : UNKNOWN_CARD_TTL_MS);
+		return card;
+	}
+
+	return {
+		collectionIndexer,
+		resolve(title, rarity) {
+			const key = cardKey(title, rarity);
+			const existing = inFlight.get(key);
+			if (existing) return existing;
+			const resolving = lookup(title, rarity).finally(() => inFlight.delete(key));
+			inFlight.set(key, resolving);
+			return resolving;
+		},
+	};
+}

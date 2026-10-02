@@ -65,3 +65,11 @@ export async function purgeExpiredEntries(namespaces: readonly string[], now = D
 		.map(([key]) => key);
 	if (expiredKeys.length > 0) await browser.storage.local.remove(expiredKeys);
 }
+
+export async function removeNamespaces(namespaces: readonly string[]): Promise<void> {
+	const everything = await browser.storage.local.get(null);
+	const retiredKeys = Object.keys(everything).filter((key) =>
+		namespaces.some((namespace) => key.startsWith(`${namespace}:`)),
+	);
+	if (retiredKeys.length > 0) await browser.storage.local.remove(retiredKeys);
+}

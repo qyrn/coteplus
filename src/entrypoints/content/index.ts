@@ -1,5 +1,7 @@
 import "./style.css";
 import { defineContentScript } from "wxt/utils/define-content-script";
+import { createCardCatalog } from "../../features/cards/card-catalog";
+import { startCollectionAutoSync } from "../../features/cards/collection-auto-sync";
 import { startAveragePrices } from "../../features/prices/average-prices";
 import { startBulkPriceToolbar } from "../../features/prices/bulk-price-toolbar";
 import { createPriceService } from "../../features/prices/price-service";
@@ -18,7 +20,9 @@ export default defineContentScript({
 			fetcher: (url) => fetch(new URL(url, location.origin), { credentials: "include" }),
 		});
 		const pageWatcher = createPageWatcher(ctx);
-		const priceService = createPriceService(siteApi);
+		const catalog = createCardCatalog(siteApi);
+		const priceService = createPriceService(siteApi, catalog);
+		startCollectionAutoSync(pageWatcher, catalog);
 		startAveragePrices(ctx, pageWatcher, priceService);
 		startBulkPriceToolbar(pageWatcher, priceService);
 	},

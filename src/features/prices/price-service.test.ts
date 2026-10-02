@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 import type { RequestQueue } from "../../lib/net/request-queue";
+import { createCardCatalog } from "../cards/card-catalog";
 import { createPriceService } from "./price-service";
 
 const collectionResponse = {
@@ -22,12 +23,17 @@ function fakeQueue(requestedUrls: string[]): RequestQueue {
 	};
 }
 
+function createService(requestedUrls: string[]) {
+	const queue = fakeQueue(requestedUrls);
+	return createPriceService(queue, createCardCatalog(queue));
+}
+
 describe("loadAllOwnedPrices", () => {
 	beforeEach(() => fakeBrowser.reset());
 
 	it("loads each owned card once, highest rarity first", async () => {
 		const requestedUrls: string[] = [];
-		const service = createPriceService(fakeQueue(requestedUrls));
+		const service = createService(requestedUrls);
 		const progress = await service.loadAllOwnedPrices({ signal: new AbortController().signal, onProgress: () => {} });
 		expect(progress).toEqual({ done: 2, total: 2, failed: 0 });
 		expect(requestedUrls.filter((url) => url.includes("/sales"))).toEqual([
@@ -38,7 +44,7 @@ describe("loadAllOwnedPrices", () => {
 
 	it("skips prices fetched less than a day ago", async () => {
 		const requestedUrls: string[] = [];
-		const service = createPriceService(fakeQueue(requestedUrls));
+		const service = createService(requestedUrls);
 		const options = { signal: new AbortController().signal, onProgress: () => {} };
 		await service.loadAllOwnedPrices(options);
 		requestedUrls.length = 0;
@@ -50,7 +56,7 @@ describe("loadAllOwnedPrices", () => {
 		const requestedUrls: string[] = [];
 		const controller = new AbortController();
 		controller.abort();
-		const service = createPriceService(fakeQueue(requestedUrls));
+		const service = createService(requestedUrls);
 		const progress = await service.loadAllOwnedPrices({ signal: controller.signal, onProgress: () => {} });
 		expect(progress.done).toBe(0);
 		expect(requestedUrls.some((url) => url.includes("/sales"))).toBe(false);

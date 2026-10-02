@@ -53,9 +53,6 @@ export function startAveragePrices(
 
 	pageWatcher.subscribe(() => {
 		if (isBattleRoute(location.pathname)) return;
-		if (location.pathname === "/collection") {
-			priceService.collectionIndexer.syncIfStale().catch(() => undefined);
-		}
 		for (const card of findCards(document.body)) {
 			if (!isRenderedFor(card)) visibilityObserver.observe(card.element);
 		}

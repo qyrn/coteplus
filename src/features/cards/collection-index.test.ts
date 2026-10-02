@@ -19,7 +19,7 @@ describe("parseCollectionPage", () => {
 			],
 		};
 		expect(parseCollectionPage(json)).toEqual({
-			cards: [{ cardId: "a", title: "Benjamin Castaldi", rarity: "L" }],
+			cards: [{ cardId: "a", hideImage: false, title: "Benjamin Castaldi", rarity: "L" }],
 			total: 1236,
 		});
 	});

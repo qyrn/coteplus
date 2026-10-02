@@ -2,11 +2,15 @@ import "./style.css";
 import { defineContentScript } from "wxt/utils/define-content-script";
 import { createCardCatalog } from "../../features/cards/card-catalog";
 import { startCollectionAutoSync } from "../../features/cards/collection-auto-sync";
+import { createCardImageService } from "../../features/images/card-image-service";
+import { startMissingImages } from "../../features/images/missing-images";
 import { startAveragePrices } from "../../features/prices/average-prices";
 import { startBulkPriceToolbar } from "../../features/prices/bulk-price-toolbar";
 import { createPriceService } from "../../features/prices/price-service";
 import { createRequestQueue } from "../../lib/net/request-queue";
 import { createPageWatcher } from "../../lib/site/page-watcher";
+
+const WIKIMEDIA_USER_AGENT = "WikiMastersPlus/0.1 (extension navigateur)";
 
 export default defineContentScript({
 	matches: ["https://www.wiki-masters.com/*"],
@@ -19,11 +23,19 @@ export default defineContentScript({
 			baseBackoffMs: 1000,
 			fetcher: (url) => fetch(new URL(url, location.origin), { credentials: "include" }),
 		});
+		const wikimediaApi = createRequestQueue({
+			concurrency: 2,
+			minIntervalMs: 100,
+			maxRetries: 2,
+			baseBackoffMs: 1000,
+			fetcher: (url) => fetch(url, { credentials: "omit", headers: { "Api-User-Agent": WIKIMEDIA_USER_AGENT } }),
+		});
 		const pageWatcher = createPageWatcher(ctx);
 		const catalog = createCardCatalog(siteApi);
 		const priceService = createPriceService(siteApi, catalog);
 		startCollectionAutoSync(pageWatcher, catalog);
 		startAveragePrices(ctx, pageWatcher, priceService);
 		startBulkPriceToolbar(pageWatcher, priceService);
+		startMissingImages(ctx, pageWatcher, catalog, createCardImageService(wikimediaApi));
 	},
 });

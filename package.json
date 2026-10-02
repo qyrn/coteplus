@@ -1,26 +1,27 @@
 {
-	"name": "wikimasters-extension",
-	"private": true,
-	"version": "0.1.0",
-	"type": "module",
-	"scripts": {
-		"dev": "wxt",
-		"dev:firefox": "wxt -b firefox",
-		"build": "wxt build",
-		"build:firefox": "wxt build -b firefox",
-		"zip": "wxt zip",
-		"zip:firefox": "wxt zip -b firefox",
-		"typecheck": "tsc --noEmit",
-		"lint": "biome check .",
-		"format": "biome check --write .",
-		"test": "vitest run",
-		"postinstall": "wxt prepare"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "^2.5.15",
-		"happy-dom": "^20.14.5",
-		"typescript": "^7.0.2",
-		"vitest": "^5.0.3",
-		"wxt": "^0.21.4"
-	}
+  "name": "wikimasters-extension",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "test": "vitest run",
+    "postinstall": "wxt prepare",
+    "check": "biome check . && tsc --noEmit && vitest run"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "happy-dom": "^20.14.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3",
+    "wxt": "^0.21.4"
+  }
 }

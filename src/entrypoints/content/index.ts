@@ -9,8 +9,8 @@ export default defineContentScript({
 	runAt: "document_idle",
 	main(ctx) {
 		const siteApi = createRequestQueue({
-			concurrency: 2,
-			minIntervalMs: 250,
+			concurrency: 4,
+			minIntervalMs: 50,
 			maxRetries: 3,
 			baseBackoffMs: 1000,
 			fetcher: (url) =>

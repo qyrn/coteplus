@@ -1,7 +1,11 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
 import { type CardView, findCards, readCard } from "../../lib/site/card-dom";
 import { isBattleRoute } from "../../lib/site/routes";
-import { findPriceBadge, renderPriceBadge } from "./price-badge";
+import {
+	findPriceBadge,
+	type PriceBadgeState,
+	renderPriceBadge,
+} from "./price-badge";
 import type { PriceService } from "./price-service";
 
 const RENDERED_TITLE_ATTRIBUTE = "data-wmp-price-for";
@@ -14,22 +18,31 @@ function isRenderedFor(card: CardView): boolean {
 	);
 }
 
+function badgeStateFor(average: number | null): PriceBadgeState {
+	return average === null ? { kind: "none" } : { kind: "price", average };
+}
+
+function renderIfStillShown(card: CardView, state: PriceBadgeState): void {
+	const current = readCard(card.element);
+	if (current?.title === card.title)
+		renderPriceBadge(current.element, current.heading, state);
+}
+
 async function showAveragePrice(
 	card: CardView,
 	priceService: PriceService,
 ): Promise<void> {
 	card.element.setAttribute(RENDERED_TITLE_ATTRIBUTE, card.title);
 	renderPriceBadge(card.element, card.heading, { kind: "loading" });
-	let state: Parameters<typeof renderPriceBadge>[2];
 	try {
-		const average = await priceService.getAveragePrice(card.title, card.rarity);
-		state = average === null ? { kind: "none" } : { kind: "price", average };
+		const price = await priceService.getAveragePrice(card.title, card.rarity);
+		renderIfStillShown(card, badgeStateFor(price.average));
+		price.refreshed
+			?.then((average) => renderIfStillShown(card, badgeStateFor(average)))
+			.catch(() => undefined);
 	} catch {
-		state = { kind: "error" };
+		renderIfStillShown(card, { kind: "error" });
 	}
-	const current = readCard(card.element);
-	if (current?.title === card.title)
-		renderPriceBadge(current.element, current.heading, state);
 }
 
 export function startAveragePrices(
@@ -54,6 +67,9 @@ export function startAveragePrices(
 	function scanCards(): void {
 		scanScheduled = false;
 		if (isBattleRoute(location.pathname)) return;
+		if (location.pathname === "/collection") {
+			priceService.collectionIndexer.syncIfStale().catch(() => undefined);
+		}
 		for (const card of findCards(document.body)) {
 			if (!isRenderedFor(card)) visibilityObserver.observe(card.element);
 		}

@@ -18,8 +18,10 @@ export interface RequestQueueOptions {
 	now?: () => number;
 }
 
+export type RequestPriority = "visible" | "background";
+
 export interface RequestQueue {
-	getJson(url: string): Promise<unknown>;
+	getJson(url: string, priority?: RequestPriority): Promise<unknown>;
 }
 
 interface PendingRequest {
@@ -46,7 +48,10 @@ function readRetryAfterMs(response: Response): number | null {
 export function createRequestQueue(options: RequestQueueOptions): RequestQueue {
 	const sleep = options.sleep ?? wait;
 	const now = options.now ?? Date.now;
-	const pending: PendingRequest[] = [];
+	const pendingByPriority: Record<RequestPriority, PendingRequest[]> = {
+		visible: [],
+		background: [],
+	};
 	let activeCount = 0;
 	let lastStartedAt = Number.NEGATIVE_INFINITY;
 	let pumpScheduled = false;
@@ -85,9 +90,22 @@ export function createRequestQueue(options: RequestQueueOptions): RequestQueue {
 			});
 	}
 
+	function takeNext(): PendingRequest | undefined {
+		return (
+			pendingByPriority.visible.shift() ?? pendingByPriority.background.shift()
+		);
+	}
+
+	function hasPending(): boolean {
+		return (
+			pendingByPriority.visible.length > 0 ||
+			pendingByPriority.background.length > 0
+		);
+	}
+
 	function pump(): void {
 		if (pumpScheduled) return;
-		while (activeCount < options.concurrency && pending.length > 0) {
+		while (activeCount < options.concurrency && hasPending()) {
 			const delayMs = lastStartedAt + options.minIntervalMs - now();
 			if (delayMs > 0) {
 				pumpScheduled = true;
@@ -97,15 +115,15 @@ export function createRequestQueue(options: RequestQueueOptions): RequestQueue {
 				});
 				return;
 			}
-			const next = pending.shift();
+			const next = takeNext();
 			if (next) start(next);
 		}
 	}
 
 	return {
-		getJson(url) {
+		getJson(url, priority = "visible") {
 			return new Promise((resolve, reject) => {
-				pending.push({ url, resolve, reject });
+				pendingByPriority[priority].push({ url, resolve, reject });
 				pump();
 			});
 		},

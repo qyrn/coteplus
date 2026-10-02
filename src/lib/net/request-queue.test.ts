@@ -76,3 +76,22 @@ describe("createRequestQueue", () => {
 		expect(fetcher).toHaveBeenCalledTimes(3);
 	});
 });
+
+describe("request priority", () => {
+	it("serves visible requests before background ones", async () => {
+		const order: string[] = [];
+		const fetcher = async (url: string) => {
+			order.push(url);
+			return jsonResponse(200, {});
+		};
+		const queue = createRequestQueue({
+			...baseOptions(fetcher),
+			concurrency: 1,
+		});
+		const first = queue.getJson("/first");
+		const background = queue.getJson("/background", "background");
+		const visible = queue.getJson("/visible");
+		await Promise.all([first, background, visible]);
+		expect(order).toEqual(["/first", "/visible", "/background"]);
+	});
+});

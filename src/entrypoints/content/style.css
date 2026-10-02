@@ -1,0 +1,25 @@
+.wmp-price-badge {
+	display: inline-block;
+	margin-top: 2px;
+	padding: 1px 6px;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 16px;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+	color: #ecfdf5;
+	background: rgb(12 13 12 / 0.72);
+	box-shadow: inset 0 0 0 1px rgb(52 211 153 / 0.45);
+}
+
+.wmp-price-badge[data-state="loading"] {
+	color: #a3aca7;
+	box-shadow: inset 0 0 0 1px rgb(163 172 167 / 0.3);
+}
+
+.wmp-price-badge[data-state="none"],
+.wmp-price-badge[data-state="error"] {
+	color: #a3aca7;
+	box-shadow: none;
+}

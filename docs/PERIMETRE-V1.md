@@ -2,6 +2,8 @@
 
 Synthèse de `ANALYSE.md`, `kzfamily-inventory.md` et des specs de `docs/ideas/`.
 
+L'extension remplace kzfamily : elle couvre toutes ses fonctions autorisées, et le joueur désinstalle kzfamily. L'extension ne touche pas aux autres extensions installées.
+
 ## Principe
 
 L'extension lit, range et affiche. Elle ne joue jamais à la place du joueur.
@@ -50,10 +52,11 @@ Le DOM ne contient aucun id de carte. Le lien entre une carte affichée et ses d
 
 ### Lot 1 : prix moyens
 
-- Badge de prix moyen sur `/collection`, `/marketplace/{id}` et dans les échanges
+- Badge de prix moyen sur toutes les cartes affichées : `/collection`, `/global-collection` (liste et carte ouverte), `/marketplace` (liste et détail), écran de révélation de `/pulls`, échanges
 - Source : `GET /api/marketplace/cards/{id}/sales?scope=summary`, champ `summary[rareté].average`
 - Chargement à l'apparition à l'écran, pas de chargement global au démarrage
 - Totaux par côté dans un échange (prix moyens plus wikibidous)
+- Récap de valeur d'un paquet ouvert
 
 ### Lot 2 : paquets
 
@@ -73,6 +76,7 @@ Le DOM ne contient aucun id de carte. Le lien entre une carte affichée et ses d
 - Export CSV (séparateur `;`, BOM, protection contre l'injection de formules) et JSON
 - Vue tableau avec filtres et tris absents du site (ATK, DEF, doublons, date d'obtention)
 - Filtre "Non possédées" sur `/global-collection`
+- "Meilleures ventes" : cartes de la collection classées par prix moyen, avec le nombre de ventes récentes (liquidité), le nombre d'exemplaires et un repère "doublon" pour vendre sans perdre la carte. Aucun bouton de mise en vente : le joueur vend depuis le site
 
 ### Lot 5 : échanges
 
@@ -86,11 +90,11 @@ Le DOM ne contient aucun id de carte. Le lien entre une carte affichée et ses d
 - Son quand le compteur de notifications du site augmente
 - Images de remplacement pour les cartes sans image (Wikidata, Commons)
 - Familles de cartes avec import et export
+- Restyle "full-art" des cartes (désactivable)
+- Copie d'une carte en PNG
 
 ## Hors v1
 
-- Restyle "full-art" des cartes
-- Copie d'une carte en PNG
 - Synchronisation des réglages entre appareils
 
 ## Points à vérifier sur une vraie session

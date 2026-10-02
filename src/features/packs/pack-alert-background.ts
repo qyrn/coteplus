@@ -1,17 +1,10 @@
 import { browser } from "wxt/browser";
 import { storage } from "wxt/utils/storage";
+import { openSitePage } from "../../lib/browser/open-site-page";
 import { isPackStockMessage, type PackStockMessage } from "./pack-messages";
-import {
-	estimateStock,
-	fullStockAt,
-	isPackStockState,
-	nextStockChangeAt,
-	type PackStockState,
-	stateFromReading,
-} from "./pack-stock";
+import { estimateStock, fullStockAt, nextStockChangeAt, type PackStockState, stateFromReading } from "./pack-stock";
+import { packStockItem, readPackStockState } from "./pack-stock-store";
 
-const SITE_ORIGIN = "https://www.wiki-masters.com";
-const PULLS_URL = `${SITE_ORIGIN}/pulls`;
 const TICK_ALARM = "pack-stock-tick";
 const FULL_ALARM = "pack-stock-full";
 const FULL_NOTIFICATION_ID = "pack-stock-full";
@@ -20,15 +13,9 @@ const BADGE_FULL_COLOR = "#34d399";
 const BADGE_PARTIAL_COLOR = "#3f4642";
 const BADGE_UNKNOWN_COLOR = "#2e3431";
 
-const packStockItem = storage.defineItem<PackStockState | null>("local:pack-stock", { fallback: null });
 const notifiedFullAtItem = storage.defineItem<number | null>("local:pack-stock-notified-full-at", { fallback: null });
 
 const timeFormatter = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
-
-async function readState(): Promise<PackStockState | null> {
-	const state = await packStockItem.getValue();
-	return isPackStockState(state) ? state : null;
-}
 
 async function scheduleAlarm(name: string, when: number | null): Promise<void> {
 	await browser.alarms.clear(name);
@@ -42,7 +29,7 @@ async function showBadge(text: string, color: string): Promise<void> {
 }
 
 async function refresh(): Promise<void> {
-	const state = await readState();
+	const state = await readPackStockState();
 	const now = Date.now();
 	if (!state) {
 		await showBadge("?", BADGE_UNKNOWN_COLOR);
@@ -64,7 +51,7 @@ function fullStockMessage(state: PackStockState, fullAt: number, now: number): s
 }
 
 async function notifyIfFull(): Promise<void> {
-	const state = await readState();
+	const state = await readPackStockState();
 	const fullAt = state ? fullStockAt(state) : null;
 	const now = Date.now();
 	if (!state || fullAt === null || now < fullAt || (await notifiedFullAtItem.getValue()) === fullAt) return;
@@ -77,25 +64,11 @@ async function notifyIfFull(): Promise<void> {
 	});
 }
 
-async function openPullsTab(): Promise<void> {
-	const siteTabs = await browser.tabs.query({ url: `${SITE_ORIGIN}/*` });
-	const target = siteTabs.find((tab) => tab.url?.startsWith(PULLS_URL)) ?? siteTabs[0];
-	if (target?.id === undefined) {
-		await browser.tabs.create({ url: PULLS_URL });
-		return;
-	}
-	await browser.tabs.update(
-		target.id,
-		target.url?.startsWith(PULLS_URL) ? { active: true } : { active: true, url: PULLS_URL },
-	);
-	if (target.windowId !== undefined) await browser.windows.update(target.windowId, { focused: true });
-}
-
 async function handleMessage(message: PackStockMessage): Promise<void> {
 	if (message.type === "pack-stock/signed-out") {
 		await packStockItem.setValue(null);
 	} else {
-		await packStockItem.setValue(stateFromReading(message.reading, message.readAt, await readState()));
+		await packStockItem.setValue(stateFromReading(message.reading, message.readAt, await readPackStockState()));
 	}
 	await refresh();
 }
@@ -115,7 +88,7 @@ export function startPackAlert(): void {
 	browser.notifications.onClicked.addListener((notificationId) => {
 		if (notificationId !== FULL_NOTIFICATION_ID) return;
 		void browser.notifications.clear(notificationId);
-		void openPullsTab();
+		void openSitePage("/pulls");
 	});
 	browser.runtime.onStartup.addListener(() => void refreshAndNotify());
 	browser.runtime.onInstalled.addListener(() => void refreshAndNotify());

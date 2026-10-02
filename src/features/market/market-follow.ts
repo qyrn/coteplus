@@ -6,7 +6,7 @@ import {
 	followAuction,
 	followBids,
 	followedAuctionsItem,
-	unfollowAuction,
+	stopFollowing,
 	unfollowedBidsItem,
 } from "./followed-auctions";
 import { auctionDetailUrl, fetchMyMarket, type MyMarket, parseAuctionDetail } from "./my-market";
@@ -57,14 +57,8 @@ export function startMarketFollow(ctx: ContentScriptContext, pageWatcher: PageWa
 	}
 
 	async function toggleFollow(auctionId: string): Promise<void> {
-		const current = await followedAuctionsItem.getValue();
-		const existing = current[auctionId];
-		if (existing) {
-			if (existing.source === "bid") {
-				const excluded = await unfollowedBidsItem.getValue();
-				await unfollowedBidsItem.setValue([...new Set([...excluded, auctionId])]);
-			}
-			await followedAuctionsItem.setValue(unfollowAuction(current, auctionId));
+		if (auctionId in (await followedAuctionsItem.getValue())) {
+			await stopFollowing(auctionId);
 			return;
 		}
 		const auction = parseAuctionDetail(await siteApi.getJson(auctionDetailUrl(auctionId)));

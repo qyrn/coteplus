@@ -64,6 +64,15 @@ export function unfollowAuction(followed: FollowedAuctions, auctionId: string): 
 	return remaining;
 }
 
+export async function stopFollowing(auctionId: string): Promise<void> {
+	const current = await followedAuctionsItem.getValue();
+	if (current[auctionId]?.source === "bid") {
+		const excluded = await unfollowedBidsItem.getValue();
+		await unfollowedBidsItem.setValue([...new Set([...excluded, auctionId])]);
+	}
+	await followedAuctionsItem.setValue(unfollowAuction(current, auctionId));
+}
+
 export function followBids(
 	followed: FollowedAuctions,
 	bids: AuctionSummary[],

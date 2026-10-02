@@ -70,3 +70,25 @@ Points faibles relevés :
 - Plus de 1300 clés `wm_avg_v3_*` dans le localStorage du site, sans nettoyage
 - Bouton "Ouvrir automatiquement" : contraire à la règle 3, risque de sanction pour l'utilisateur
 - Lien sponsorisé injecté dans l'interface du jeu
+
+## Relevé sur une session réelle (lecture seule)
+
+### Structure d'une carte dans le DOM
+
+Identique sur la collection, le marché et les autres pages :
+
+- racine : `div` avec les classes `glow-{c|pc|r|sr|ur|l}`, `rounded-2xl`, `cursor-pointer`
+- pastille de rareté : `div` dont le texte vaut `L`, `UR`, `SR`, `R`, `PC` ou `C`
+- titre : `h3`, catégorie : `p` juste après
+- ATK et DEF : deux `span` dans le bloc des stats (icônes `lucide-swords` et `lucide-shield`)
+- favori : `button[aria-label="Ajouter aux favoris"]`
+- aucun id de carte, aucun `data-*`
+
+Sur le marché, la carte est dans `div#marketplace-auction-{uuid}` > `a.card-frame[href="/marketplace/{uuid}"]`, avec la mise de départ et la durée restante (`span.tabular-nums`).
+
+### Réponses de l'API
+
+- `GET /api/my-collection?sort=rarity&page=0&stats=1` : `{collection, total, rarityCounts, tagOptions, pendingTradeCardIds}`. Une ligne : `{id, card_id, count, is_shiny, obtained_at, starred, tags[], user_id, card{id, wikipedia_title, category, rarity, atk, def, pageviews, q_score, image_url, hide_image, wikipedia_url, lang, created_at}}`. Pas de `snapshot_rarity`. 50 lignes par page
+- `GET /api/my-collection/stats?sort=rarity` : `{total, rarityCounts{C,PC,R,SR,UR,L}, tagOptions}`
+- `GET /api/marketplace/cards/{id}/sales?scope=summary` sans Pro : `{isPro, wikipedia_title, summary{[rareté]{average}}}`. Pas de `count` ni `latest` pour un compte non Pro
+- `GET /api/cards?page=0&q={texte}&sort=rarity` : `{cards, total, searchHasMore, rarityCounts, friendOwners, ownedCardIds, wishlistCardIds}`. Recherche plein texte : il faut filtrer sur `wikipedia_title` exact pour retrouver l'id d'une carte affichée

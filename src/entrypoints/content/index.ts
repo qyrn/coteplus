@@ -66,7 +66,7 @@ export default defineContentScript({
 		const marketFollow = startMarketFollow(ctx, pageWatcher, siteApi);
 		startMarketReportPanel(pageWatcher, marketFollow, priceService);
 		startWishlistRedirect(ctx, pageWatcher);
-		startSellerProfileLinks(pageWatcher);
+		startSellerProfileLinks(ctx, pageWatcher);
 		startWishAuctionsPanel(pageWatcher, siteApi, priceService);
 		startTradeValues(pageWatcher, priceService);
 		startMissingImages(ctx, pageWatcher, catalog, imageService);

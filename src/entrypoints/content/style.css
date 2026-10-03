@@ -252,21 +252,18 @@ html.light .wmp-pull-stats-bar > span {
 	margin-top: 6px;
 }
 
-.wmp-seller-link {
-	font-size: 12px;
-	color: var(--wmp-muted);
+[data-wmp-profile] {
+	cursor: pointer;
 	text-decoration: underline;
+	text-decoration-style: dotted;
 	text-underline-offset: 2px;
 }
 
-.wmp-seller-link:hover,
-.wmp-seller-link:focus-visible {
+[data-wmp-profile]:hover,
+[data-wmp-profile]:focus-visible {
 	color: var(--wmp-accent-text);
+	text-decoration-style: solid;
 	outline: none;
-}
-
-p > .wmp-seller-link {
-	margin-left: 6px;
 }
 
 .wmp-follow-button {

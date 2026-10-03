@@ -8,6 +8,10 @@ export class HttpError extends Error {
 	}
 }
 
+export class NonRetryableError extends Error {
+	override name = "NonRetryableError";
+}
+
 export interface RequestQueueOptions {
 	concurrency: number;
 	minIntervalMs: number;
@@ -62,7 +66,7 @@ export function createRequestQueue(options: RequestQueueOptions): RequestQueue {
 			try {
 				response = await options.fetcher(url);
 			} catch (networkError) {
-				if (attempt >= options.maxRetries) throw networkError;
+				if (networkError instanceof NonRetryableError || attempt >= options.maxRetries) throw networkError;
 				await sleep(options.baseBackoffMs * 2 ** attempt);
 				continue;
 			}

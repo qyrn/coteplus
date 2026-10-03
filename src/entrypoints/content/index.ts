@@ -16,10 +16,10 @@ import { startPullRevealTracker } from "../../features/packs/pull-reveal-tracker
 import { startPullStatsPanel } from "../../features/packs/pull-stats-panel";
 import { createRevealWatcher } from "../../features/packs/reveal-watcher";
 import { startAveragePrices } from "../../features/prices/average-prices";
-import { startBulkPriceToolbar } from "../../features/prices/bulk-price-toolbar";
 import { createPriceService } from "../../features/prices/price-service";
 import { startTradeValues } from "../../features/trades/trade-values";
 import { createRequestQueue } from "../../lib/net/request-queue";
+import { createGuardedSiteFetcher } from "../../lib/net/site-api-guard";
 import { createPageWatcher } from "../../lib/site/page-watcher";
 
 const WIKIMEDIA_USER_AGENT = "WikiMastersPlus/0.1 (extension navigateur)";
@@ -30,11 +30,11 @@ export default defineContentScript({
 	runAt: "document_idle",
 	main(ctx) {
 		const siteApi = createRequestQueue({
-			concurrency: 4,
-			minIntervalMs: 50,
-			maxRetries: 3,
-			baseBackoffMs: 1000,
-			fetcher: (url) => fetch(new URL(url, location.origin), { credentials: "include" }),
+			concurrency: 2,
+			minIntervalMs: 400,
+			maxRetries: 2,
+			baseBackoffMs: 2000,
+			fetcher: createGuardedSiteFetcher(location.origin),
 		});
 		const wikimediaApi = createRequestQueue({
 			concurrency: 2,
@@ -57,7 +57,6 @@ export default defineContentScript({
 		startCollectionAutoSync(pageWatcher, catalog);
 		startMarketCardSeed(pageWatcher, siteApi, catalog);
 		startAveragePrices(ctx, pageWatcher, priceService);
-		startBulkPriceToolbar(pageWatcher, priceService);
 		startMarketDeals(ctx, pageWatcher, priceService);
 		const marketFollow = startMarketFollow(ctx, pageWatcher, siteApi);
 		startMarketReportPanel(pageWatcher, marketFollow, priceService);

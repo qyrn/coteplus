@@ -29,7 +29,15 @@ function renderFollowButton(button: HTMLButtonElement, isFollowed: boolean): voi
 	button.title = isFollowed ? "Ne plus suivre cette enchère" : "Recevoir un rappel 5 min avant la fin";
 }
 
-export function startMarketFollow(ctx: ContentScriptContext, pageWatcher: PageWatcher, siteApi: RequestQueue): void {
+export interface MarketFollow {
+	latestMarket(): Promise<MyMarket | null>;
+}
+
+export function startMarketFollow(
+	ctx: ContentScriptContext,
+	pageWatcher: PageWatcher,
+	siteApi: RequestQueue,
+): MarketFollow {
 	let followed: FollowedAuctions = {};
 	let lastSyncAt = 0;
 	let syncing: Promise<MyMarket | null> | null = null;
@@ -134,4 +142,6 @@ export function startMarketFollow(ctx: ContentScriptContext, pageWatcher: PageWa
 		if (detailId) placeDetailButton(detailId);
 		else placeTileButtons();
 	});
+
+	return { latestMarket: syncBidsIfStale };
 }

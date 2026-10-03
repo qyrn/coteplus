@@ -8,6 +8,8 @@ const auctionJson = {
 	status: "settled_sold",
 	final_price: 330,
 	current_bid: 330,
+	base_amount: 10,
+	winner_id: "buyer",
 	card: { wikipedia_title: "KGB", rarity: "R" },
 };
 
@@ -23,6 +25,8 @@ describe("parseMyMarket", () => {
 				status: "settled_sold",
 				finalPrice: 330,
 				currentBid: 330,
+				baseAmount: 10,
+				winnerId: "buyer",
 			},
 		]);
 		expect(market.history).toHaveLength(1);

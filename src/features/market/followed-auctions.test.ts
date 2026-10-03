@@ -14,7 +14,17 @@ import type { AuctionSummary } from "./my-market";
 const MINUTE = 60 * 1000;
 
 function auction(id: string, endAt: number, status: AuctionSummary["status"] = "active"): AuctionSummary {
-	return { id, title: `Carte ${id}`, rarity: "R", endAt, status, finalPrice: null, currentBid: 10 };
+	return {
+		id,
+		title: `Carte ${id}`,
+		rarity: "R",
+		endAt,
+		status,
+		finalPrice: null,
+		currentBid: 10,
+		baseAmount: 1,
+		winnerId: null,
+	};
 }
 
 function followed(id: string, endAt: number, remindedAt: number | null = null): FollowedAuction {

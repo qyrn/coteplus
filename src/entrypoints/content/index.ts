@@ -6,6 +6,7 @@ import { createCardImageService } from "../../features/images/card-image-service
 import { startMissingImages } from "../../features/images/missing-images";
 import { startMarketDeals } from "../../features/market/market-deals";
 import { startMarketFollow } from "../../features/market/market-follow";
+import { startMarketReportPanel } from "../../features/market/market-report-panel";
 import { startPackStockWatcher } from "../../features/packs/pack-stock-watcher";
 import { startPackValueRecap } from "../../features/packs/pack-value-recap";
 import { startPullRevealTracker } from "../../features/packs/pull-reveal-tracker";
@@ -54,7 +55,8 @@ export default defineContentScript({
 		startAveragePrices(ctx, pageWatcher, priceService);
 		startBulkPriceToolbar(pageWatcher, priceService);
 		startMarketDeals(ctx, pageWatcher, priceService);
-		startMarketFollow(ctx, pageWatcher, siteApi);
+		const marketFollow = startMarketFollow(ctx, pageWatcher, siteApi);
+		startMarketReportPanel(pageWatcher, marketFollow, priceService);
 		startTradeValues(pageWatcher, priceService);
 		startMissingImages(ctx, pageWatcher, catalog, imageService);
 		startPackStockWatcher(pageWatcher);

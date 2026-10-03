@@ -13,6 +13,8 @@ export interface AuctionSummary {
 	status: AuctionStatus;
 	finalPrice: number | null;
 	currentBid: number | null;
+	baseAmount: number | null;
+	winnerId: string | null;
 }
 
 export interface MyMarket {
@@ -34,6 +36,10 @@ function readNumber(value: unknown): number | null {
 	return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function readString(value: unknown): string | null {
+	return typeof value === "string" && value.length > 0 ? value : null;
+}
+
 export function readAuctionSummary(entry: unknown): AuctionSummary | null {
 	if (!isRecord(entry) || !isRecord(entry.card)) return null;
 	const { id, snapshot_rarity: snapshotRarity, end_at: endAtText, status } = entry;
@@ -51,6 +57,8 @@ export function readAuctionSummary(entry: unknown): AuctionSummary | null {
 		status,
 		finalPrice: readNumber(entry.final_price),
 		currentBid: readNumber(entry.current_bid),
+		baseAmount: readNumber(entry.base_amount),
+		winnerId: readString(entry.winner_id),
 	};
 }
 

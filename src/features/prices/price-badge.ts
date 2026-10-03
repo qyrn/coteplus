@@ -2,7 +2,8 @@ export type PriceBadgeState =
 	| { kind: "loading" }
 	| { kind: "price"; average: number }
 	| { kind: "none" }
-	| { kind: "error" };
+	| { kind: "error" }
+	| { kind: "paused" };
 
 export const PRICE_BADGE_CLASS = "wmp-price-badge";
 
@@ -20,6 +21,8 @@ function badgeText(state: PriceBadgeState): string {
 			return "Aucune vente";
 		case "error":
 			return "Prix indispo.";
+		case "paused":
+			return "Prix en pause";
 	}
 }
 

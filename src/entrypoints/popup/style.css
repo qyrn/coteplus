@@ -195,3 +195,13 @@ p {
 	color: #fecaca;
 	outline: none;
 }
+
+.pause-notice {
+	margin-top: 10px;
+	padding: 8px 10px;
+	border: 1px solid rgb(250 153 49 / 0.5);
+	border-radius: 8px;
+	background: rgb(250 153 49 / 0.12);
+	color: #fed7aa;
+	font-size: 12px;
+}

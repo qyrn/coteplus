@@ -1,4 +1,5 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
+import { SiteApiPausedError } from "../../lib/net/site-api-guard";
 import { type CardView, readCard } from "../../lib/site/card-dom";
 import type { PageWatcher } from "../../lib/site/page-watcher";
 import { handleCardsWhenVisible } from "../../lib/site/visible-cards";
@@ -27,8 +28,8 @@ async function showAveragePrice(card: CardView, priceService: PriceService): Pro
 		const price = await priceService.getAveragePrice(card.title, card.rarity);
 		renderIfStillShown(card, badgeStateFor(price.average));
 		price.refreshed?.then((average) => renderIfStillShown(card, badgeStateFor(average))).catch(() => undefined);
-	} catch {
-		renderIfStillShown(card, { kind: "error" });
+	} catch (error) {
+		renderIfStillShown(card, { kind: error instanceof SiteApiPausedError ? "paused" : "error" });
 	}
 }
 

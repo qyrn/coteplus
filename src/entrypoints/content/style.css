@@ -19,7 +19,8 @@
 }
 
 .wmp-price-badge[data-state="none"],
-.wmp-price-badge[data-state="error"] {
+.wmp-price-badge[data-state="error"],
+.wmp-price-badge[data-state="paused"] {
 	color: #a3aca7;
 	box-shadow: none;
 }

@@ -6,6 +6,7 @@ import {
 } from "../../features/market/followed-auctions";
 import { packStockItem, readPackStockState } from "../../features/packs/pack-stock-store";
 import { openSitePage } from "../../lib/browser/open-site-page";
+import { siteApiPausedUntilItem } from "../../lib/net/site-api-guard";
 import { renderAuctionSection } from "./auction-section";
 import { renderPackSection } from "./pack-section";
 
@@ -21,6 +22,9 @@ const packElements = {
 	stock: requireElement("pack-stock", HTMLParagraphElement),
 	detail: requireElement("pack-detail", HTMLParagraphElement),
 };
+const pauseNotice = requireElement("site-pause", HTMLParagraphElement);
+const timeFormatter = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
 const auctionElements = {
 	list: requireElement("auction-list", HTMLUListElement),
 	empty: requireElement("auction-empty", HTMLParagraphElement),
@@ -38,6 +42,9 @@ const auctionActions = {
 
 async function render(): Promise<void> {
 	const now = Date.now();
+	const pausedUntil = await siteApiPausedUntilItem.getValue();
+	pauseNotice.hidden = pausedUntil <= now;
+	pauseNotice.textContent = `Le site a signalé trop de requêtes : prix en pause jusqu'à ${timeFormatter.format(pausedUntil)}.`;
 	renderPackSection(packElements, await readPackStockState(), now);
 	renderAuctionSection(
 		auctionElements,
@@ -51,5 +58,6 @@ requireElement("open-pulls", HTMLButtonElement).addEventListener("click", () => 
 requireElement("open-market", HTMLButtonElement).addEventListener("click", () => void openAndClose("/marketplace"));
 packStockItem.watch(() => void render());
 followedAuctionsItem.watch(() => void render());
+siteApiPausedUntilItem.watch(() => void render());
 setInterval(() => void render(), REFRESH_INTERVAL_MS);
 void render();

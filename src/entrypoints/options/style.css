@@ -181,3 +181,9 @@ input:disabled {
 	gap: 8px;
 	color: var(--foreground-soft);
 }
+
+.group-hint {
+	margin: 0 0 4px;
+	color: var(--muted);
+	font-size: 12.5px;
+}

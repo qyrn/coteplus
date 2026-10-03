@@ -28,7 +28,11 @@ const fields = {
 	wishlistRedirect: input("wishlistRedirect"),
 	greatDealPercent: input("greatDealPercent"),
 	reminderLeadMinutes: input("reminderLeadMinutes"),
-	standingNotification: input("standingNotification"),
+	notifyMarket: input("notifyMarket"),
+	notifyTrades: input("notifyTrades"),
+	notifyBattles: input("notifyBattles"),
+	notifyFriends: input("notifyFriends"),
+	notifyOther: input("notifyOther"),
 	packFullNotification: input("packFullNotification"),
 	quietHoursEnabled: input("quietHoursEnabled"),
 	quietHoursStart: input("quietHoursStart"),
@@ -58,7 +62,11 @@ function fill(settings: Settings): void {
 	fields.wishlistRedirect.checked = settings.wishlistRedirect;
 	fields.greatDealPercent.value = String(settings.greatDealPercent);
 	fields.reminderLeadMinutes.value = String(settings.reminderLeadMinutes);
-	fields.standingNotification.checked = settings.standingNotification;
+	fields.notifyMarket.checked = settings.notificationCategories.market;
+	fields.notifyTrades.checked = settings.notificationCategories.trades;
+	fields.notifyBattles.checked = settings.notificationCategories.battles;
+	fields.notifyFriends.checked = settings.notificationCategories.friends;
+	fields.notifyOther.checked = settings.notificationCategories.other;
 	fields.packFullNotification.checked = settings.packFullNotification;
 	fields.quietHoursEnabled.checked = settings.quietHours.enabled;
 	fields.quietHoursStart.value = minuteToTime(settings.quietHours.startMinute);
@@ -73,7 +81,13 @@ function readForm(): Settings {
 		wishlistRedirect: fields.wishlistRedirect.checked,
 		greatDealPercent: numberOr(fields.greatDealPercent, current.greatDealPercent),
 		reminderLeadMinutes: numberOr(fields.reminderLeadMinutes, current.reminderLeadMinutes),
-		standingNotification: fields.standingNotification.checked,
+		notificationCategories: {
+			market: fields.notifyMarket.checked,
+			trades: fields.notifyTrades.checked,
+			battles: fields.notifyBattles.checked,
+			friends: fields.notifyFriends.checked,
+			other: fields.notifyOther.checked,
+		},
 		packFullNotification: fields.packFullNotification.checked,
 		quietHours: {
 			enabled: fields.quietHoursEnabled.checked,

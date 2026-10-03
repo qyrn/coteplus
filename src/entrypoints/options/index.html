@@ -32,10 +32,6 @@
 						<span class="number-field"><input type="number" name="reminderLeadMinutes" inputmode="numeric" /> min</span>
 						<span class="hint">avant la fin d'une enchère suivie.</span>
 					</label>
-					<label class="toggle-row">
-						<input type="checkbox" name="standingNotification" />
-						<span>Me prévenir quand je suis dépassé ou que je gagne une enchère</span>
-					</label>
 				</fieldset>
 				<fieldset class="settings-group">
 					<legend>Paquets</legend>
@@ -45,7 +41,28 @@
 					</label>
 				</fieldset>
 				<fieldset class="settings-group">
-					<legend>Notifications</legend>
+					<legend>Notifications Windows</legend>
+					<p class="group-hint">Les notifications du site s'affichent aussi sur ton bureau, tant qu'un onglet WikiMasters est ouvert.</p>
+					<label class="toggle-row">
+						<input type="checkbox" name="notifyMarket" />
+						<span>Marché : surenchère, enchère gagnée, carte vendue, carte souhaitée en vente</span>
+					</label>
+					<label class="toggle-row">
+						<input type="checkbox" name="notifyTrades" />
+						<span>Échanges : nouvelle offre, offre acceptée</span>
+					</label>
+					<label class="toggle-row">
+						<input type="checkbox" name="notifyBattles" />
+						<span>Batailles : défis en duel</span>
+					</label>
+					<label class="toggle-row">
+						<input type="checkbox" name="notifyFriends" />
+						<span>Amis : demandes d'ami</span>
+					</label>
+					<label class="toggle-row">
+						<input type="checkbox" name="notifyOther" />
+						<span>Autres notifications du site</span>
+					</label>
 					<label class="toggle-row">
 						<input type="checkbox" name="quietHoursEnabled" />
 						<span>Heures calmes : aucune notification sur ce créneau</span>

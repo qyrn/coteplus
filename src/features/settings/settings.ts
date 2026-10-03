@@ -1,5 +1,6 @@
 import { storage } from "wxt/utils/storage";
 import { isRecord } from "../../lib/json";
+import type { NotificationCategory } from "../notifications/site-notification";
 
 export interface QuietHours {
 	enabled: boolean;
@@ -7,11 +8,13 @@ export interface QuietHours {
 	endMinute: number;
 }
 
+export type NotificationCategories = Record<NotificationCategory, boolean>;
+
 export interface Settings {
 	wishlistRedirect: boolean;
 	greatDealPercent: number;
 	reminderLeadMinutes: number;
-	standingNotification: boolean;
+	notificationCategories: NotificationCategories;
 	packFullNotification: boolean;
 	quietHours: QuietHours;
 	discardGuardMinPrice: number;
@@ -34,7 +37,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	wishlistRedirect: true,
 	greatDealPercent: 20,
 	reminderLeadMinutes: 5,
-	standingNotification: true,
+	notificationCategories: { market: true, trades: true, battles: true, friends: true, other: true },
 	packFullNotification: true,
 	quietHours: { enabled: false, startMinute: 23 * 60, endMinute: 8 * 60 },
 	discardGuardMinPrice: 10,
@@ -65,6 +68,18 @@ function readQuietHours(value: unknown): QuietHours {
 	};
 }
 
+function readNotificationCategories(value: unknown): NotificationCategories {
+	const stored = isRecord(value) ? value : {};
+	const defaults = DEFAULT_SETTINGS.notificationCategories;
+	return {
+		market: readBoolean(stored.market, defaults.market),
+		trades: readBoolean(stored.trades, defaults.trades),
+		battles: readBoolean(stored.battles, defaults.battles),
+		friends: readBoolean(stored.friends, defaults.friends),
+		other: readBoolean(stored.other, defaults.other),
+	};
+}
+
 export function readSettings(value: unknown): Settings {
 	const stored = isRecord(value) ? value : {};
 	return {
@@ -79,7 +94,7 @@ export function readSettings(value: unknown): Settings {
 			SETTING_RANGES.reminderLeadMinutes,
 			DEFAULT_SETTINGS.reminderLeadMinutes,
 		),
-		standingNotification: readBoolean(stored.standingNotification, DEFAULT_SETTINGS.standingNotification),
+		notificationCategories: readNotificationCategories(stored.notificationCategories),
 		packFullNotification: readBoolean(stored.packFullNotification, DEFAULT_SETTINGS.packFullNotification),
 		quietHours: readQuietHours(stored.quietHours),
 		discardGuardMinPrice: clampToRange(

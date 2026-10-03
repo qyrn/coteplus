@@ -657,3 +657,75 @@ html.light .wmp-pull-stats-bar > span {
 .wmp-trade-impact [data-tone="neutral"] {
 	color: var(--wmp-muted);
 }
+
+.wmp-collection-extras {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.wmp-collection-value {
+	padding: 8px 12px;
+	border: 1px solid var(--wmp-border);
+	border-radius: 10px;
+	background: var(--wmp-surface);
+	font-size: 13px;
+}
+
+.wmp-collection-value summary {
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.wmp-collection-value-body {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.wmp-collection-value-body p {
+	margin: 0;
+}
+
+.wmp-value-change {
+	font-variant-numeric: tabular-nums;
+	color: var(--wmp-accent-text);
+	font-weight: 700;
+}
+
+.wmp-value-sparkline {
+	display: block;
+	width: 100%;
+	height: 56px;
+}
+
+.wmp-value-sparkline polyline {
+	fill: none;
+	stroke: var(--wmp-accent);
+	stroke-width: 2;
+	stroke-linejoin: round;
+	stroke-linecap: round;
+}
+
+.wmp-value-rarities {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 12px;
+	font-variant-numeric: tabular-nums;
+	font-size: 12px;
+}
+
+.wmp-value-rarities strong {
+	color: var(--wmp-rarity-color, var(--wmp-muted));
+}
+
+html.light .wmp-value-rarities strong {
+	color: color-mix(in srgb, var(--wmp-rarity-color, #4b5852) 45%, #0f172a);
+}
+
+.wmp-value-note {
+	color: var(--wmp-muted);
+	font-size: 11px;
+}

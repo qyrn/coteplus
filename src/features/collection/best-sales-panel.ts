@@ -4,19 +4,12 @@ import type { CardCatalog } from "../cards/card-catalog";
 import { ownedCardsItem } from "../cards/collection-index";
 import type { PriceService } from "../prices/price-service";
 import { type BestSale, rankBestSales } from "./best-sales";
+import { collectionExtrasSlot } from "./collection-extras-slot";
 
 const PANEL_ID = "wmp-best-sales";
-const SEARCH_PLACEHOLDER_PREFIX = "Rechercher";
 const LIST_LIMIT = 30;
 
 const amountFormatter = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
-
-function findFiltersBlock(): HTMLElement | null {
-	const searchInput = [...document.querySelectorAll<HTMLInputElement>("main input")].find((input) =>
-		input.placeholder.startsWith(SEARCH_PLACEHOLDER_PREFIX),
-	);
-	return searchInput?.parentElement?.parentElement ?? null;
-}
 
 function copiesText(sale: BestSale): string {
 	const starred = sale.card.starredCopies > 0 ? `, ${sale.card.starredCopies} en favori` : "";
@@ -92,7 +85,7 @@ export function startBestSalesPanel(
 
 	pageWatcher.subscribe(() => {
 		if (location.pathname !== "/collection") return;
-		const filtersBlock = findFiltersBlock();
-		if (filtersBlock && panel.parentElement !== filtersBlock) filtersBlock.prepend(panel);
+		const slot = collectionExtrasSlot();
+		if (slot && panel.parentElement !== slot) slot.prepend(panel);
 	});
 }

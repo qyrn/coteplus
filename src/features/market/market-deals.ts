@@ -4,8 +4,8 @@ import type { PageWatcher } from "../../lib/site/page-watcher";
 import { handleCardsWhenVisible } from "../../lib/site/visible-cards";
 import type { PriceService } from "../prices/price-service";
 import { compareToAverage, dealText, readAuctionPrice } from "./auction-deal";
+import { AUCTION_TILE_SELECTOR } from "./auction-tile-actions";
 
-const AUCTION_TILE_SELECTOR = '[id^="marketplace-auction-"]';
 const DEAL_CHIP_CLASS = "wmp-deal-chip";
 const GREAT_DEAL_CLASS = "wmp-great-deal";
 const HANDLED_KEY_ATTRIBUTE = "data-wmp-deal-for";

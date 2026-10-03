@@ -1,6 +1,7 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
 import type { RequestQueue } from "../../lib/net/request-queue";
 import type { PageWatcher } from "../../lib/site/page-watcher";
+import { AUCTION_TILE_SELECTOR, TILE_ID_PREFIX, tileActions } from "./auction-tile-actions";
 import {
 	type FollowedAuctions,
 	followAuction,
@@ -11,8 +12,6 @@ import {
 } from "./followed-auctions";
 import { auctionDetailUrl, fetchMyMarket, type MyMarket, parseAuctionDetail } from "./my-market";
 
-const AUCTION_TILE_SELECTOR = '[id^="marketplace-auction-"]';
-const TILE_ID_PREFIX = "marketplace-auction-";
 const FOLLOW_BUTTON_CLASS = "wmp-follow-button";
 const DETAIL_PATH_PATTERN = /^\/marketplace\/([0-9a-f-]{36})$/i;
 const BID_BUTTON_LABEL = "Miser";
@@ -101,7 +100,8 @@ export function startMarketFollow(
 		for (const tile of document.querySelectorAll<HTMLElement>(AUCTION_TILE_SELECTOR)) {
 			const auctionId = tile.id.slice(TILE_ID_PREFIX.length);
 			const button = buttonFor(auctionId);
-			if (button.parentElement !== tile) tile.append(button);
+			const actions = tileActions(tile);
+			if (button.parentElement !== actions) actions.prepend(button);
 		}
 	}
 

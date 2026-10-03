@@ -590,3 +590,46 @@ html.light .wmp-pull-stats-bar > span {
 .wmp-market-history-amount[data-sign="negative"] {
 	color: var(--wmp-negative-text);
 }
+
+.wmp-discard-guard {
+	margin: 0 0 14px;
+	padding: 10px 12px;
+	border: 1px solid rgb(239 68 68 / 0.45);
+	border-radius: 10px;
+	background: var(--wmp-negative-soft);
+	font-size: 13px;
+}
+
+.wmp-discard-guard-title {
+	margin: 0 0 4px;
+	color: var(--wmp-negative-text);
+	font-weight: 700;
+}
+
+.wmp-discard-guard ul {
+	margin: 0 0 8px;
+	padding-left: 18px;
+}
+
+.wmp-discard-guard label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.wmp-discard-guard input {
+	accent-color: #ef4444;
+}
+
+.wmp-discard-guard-checking {
+	margin: 0;
+	color: var(--wmp-muted);
+	font-size: 12px;
+}
+
+[data-wmp-discard-guard] button[aria-disabled="true"] {
+	opacity: 0.45;
+	cursor: not-allowed;
+}

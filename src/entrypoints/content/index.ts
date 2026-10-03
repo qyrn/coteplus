@@ -3,6 +3,7 @@ import { defineContentScript } from "wxt/utils/define-content-script";
 import { createCardCatalog } from "../../features/cards/card-catalog";
 import { startCollectionAutoSync } from "../../features/cards/collection-auto-sync";
 import { startBestSalesPanel } from "../../features/collection/best-sales-panel";
+import { startDiscardGuard } from "../../features/collection/discard-guard-dialog";
 import { createCardImageService } from "../../features/images/card-image-service";
 import { startMissingImages } from "../../features/images/missing-images";
 import { startMarketCardSeed } from "../../features/market/market-card-seed";
@@ -64,6 +65,7 @@ export default defineContentScript({
 		startMarketCardSeed(pageWatcher, siteApi, catalog);
 		startAveragePrices(ctx, pageWatcher, priceService);
 		startBestSalesPanel(ctx, pageWatcher, catalog, priceService);
+		startDiscardGuard(ctx, pageWatcher, priceService, settings);
 		startMarketDeals(ctx, pageWatcher, priceService, settings);
 		const marketFollow = startMarketFollow(ctx, pageWatcher, siteApi);
 		startMarketReportPanel(pageWatcher, marketFollow, priceService);

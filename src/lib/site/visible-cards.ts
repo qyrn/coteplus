@@ -17,6 +17,7 @@ export function handleCardsWhenVisible(
 ): void {
 	const visibilityObserver = new IntersectionObserver(
 		(entries) => {
+			if (ctx.isInvalid) return;
 			for (const entry of entries) {
 				if (!entry.isIntersecting || !(entry.target instanceof HTMLElement)) continue;
 				visibilityObserver.unobserve(entry.target);

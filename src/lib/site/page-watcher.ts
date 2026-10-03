@@ -14,7 +14,7 @@ export function createPageWatcher(ctx: ContentScriptContext): PageWatcher {
 	}
 
 	function scheduleNotify(): void {
-		if (notifyScheduled) return;
+		if (notifyScheduled || ctx.isInvalid) return;
 		notifyScheduled = true;
 		ctx.requestAnimationFrame(notify);
 	}

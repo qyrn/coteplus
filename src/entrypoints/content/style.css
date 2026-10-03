@@ -540,6 +540,49 @@ h1 + .wmp-follow-button {
 	display: none;
 }
 
+.wmp-note-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 12px 14px;
+}
+
+.wmp-note-label {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.wmp-note-input {
+	width: 100%;
+	min-height: 52px;
+	padding: 8px 10px;
+	border: 1px solid var(--wmp-border);
+	border-radius: var(--wmp-radius);
+	background: var(--color-background, #0c0d0c);
+	color: var(--wmp-fg);
+	font: inherit;
+	font-size: 13px;
+	resize: vertical;
+}
+
+.wmp-note-input:focus-visible {
+	outline: 2px solid var(--wmp-accent);
+	outline-offset: 1px;
+}
+
+.wmp-friend-note {
+	flex: 1;
+	min-width: 0;
+	margin: 0;
+	overflow: hidden;
+	color: var(--wmp-muted);
+	font-size: 12px;
+	font-style: italic;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 .wmp-metrics {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));

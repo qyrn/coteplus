@@ -6,6 +6,7 @@ import { startGlobalSearchLearner } from "../../features/cards/global-search-lea
 import { startBestSalesPanel } from "../../features/collection/best-sales-panel";
 import { startCollectionValuePanel } from "../../features/collection/collection-value-panel";
 import { startDiscardGuard } from "../../features/collection/discard-guard-dialog";
+import { startFriendNotes } from "../../features/friends/friend-notes-ui";
 import { startActionGuard } from "../../features/guards/action-guard";
 import { createCardImageService } from "../../features/images/card-image-service";
 import { startMissingImages } from "../../features/images/missing-images";
@@ -87,6 +88,7 @@ export default defineContentScript({
 		startHideOwnedFilter(ctx, pageWatcher, catalog);
 		startWishlistRedirect(ctx, pageWatcher, settings);
 		startPlayerProfileLinks(ctx, pageWatcher);
+		startFriendNotes(ctx, pageWatcher);
 		startWishAuctionsPanel(pageWatcher, siteApi, priceService, settings);
 		startTradeValues(pageWatcher, priceService);
 		startMissingImages(ctx, pageWatcher, catalog, imageService);

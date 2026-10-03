@@ -73,8 +73,8 @@ function renderBalance(trade: HTMLElement, text: string, balanceSign: number): v
 	const header = trade.firstElementChild?.firstElementChild;
 	if (!header) return;
 	const chip = header.querySelector<HTMLElement>(`.${BALANCE_CLASS}`) ?? document.createElement("span");
-	chip.className = BALANCE_CLASS;
-	chip.dataset.sign = balanceSign > 0 ? "positive" : balanceSign < 0 ? "negative" : "even";
+	chip.className = `wmp-chip ${BALANCE_CLASS}`;
+	chip.dataset.tone = balanceSign > 0 ? "good" : balanceSign < 0 ? "bad" : "neutral";
 	chip.textContent = text;
 	if (!chip.isConnected) header.append(chip);
 }

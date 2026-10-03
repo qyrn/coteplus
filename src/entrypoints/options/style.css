@@ -1,55 +1,60 @@
 @import "../../styles/theme.css";
 
 body {
-	margin: 0;
-	padding: 32px 16px;
-	background: var(--background);
-	color: var(--foreground);
-	font:
-		14px / 1.5 system-ui,
-		-apple-system,
-		"Segoe UI",
-		sans-serif;
+	padding: 40px 16px 56px;
+	font-size: 14px;
 }
 
 .settings {
-	max-width: 560px;
+	max-width: 580px;
 	margin: 0 auto;
 }
 
 .settings-header {
 	display: flex;
-	align-items: baseline;
-	justify-content: space-between;
-	margin-bottom: 16px;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 20px;
+}
+
+.settings-header img {
+	border-radius: 8px;
 }
 
 .settings-header h1 {
-	margin: 0;
-	font-size: 20px;
+	font-size: 22px;
 	font-weight: 700;
 }
 
 .save-status {
-	margin: 0;
-	color: var(--accent);
-	font-size: 13px;
+	margin-left: auto;
+	padding: 4px 10px;
+	border-radius: 999px;
+	background: var(--accent-soft);
+	color: var(--accent-ink);
+	font-size: 12px;
 	font-weight: 600;
+}
+
+.save-status:empty {
+	display: none;
 }
 
 .settings-group {
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
+	gap: 0;
 	margin: 0 0 14px;
-	padding: 12px 14px 14px;
+	padding: 6px 16px;
 	border: 1px solid var(--border);
-	border-radius: 10px;
+	border-radius: var(--radius-lg);
 	background: var(--surface);
 }
 
 .settings-group legend {
-	padding: 0 6px;
+	float: left;
+	width: 100%;
+	padding: 10px 0 6px;
 	color: var(--muted);
 	font-size: 12px;
 	font-weight: 600;
@@ -57,27 +62,77 @@ body {
 	text-transform: uppercase;
 }
 
+.settings-group legend + * {
+	clear: both;
+}
+
+.toggle-row,
+.number-row,
+.time-row {
+	padding: 12px 0;
+	border-top: 1px solid var(--border);
+}
+
 .toggle-row {
 	display: grid;
-	grid-template-columns: 18px 1fr;
-	align-items: start;
-	gap: 10px;
+	grid-template-columns: 1fr auto;
+	align-items: center;
+	gap: 16px;
 	cursor: pointer;
 }
 
+.toggle-row span {
+	order: -1;
+}
+
 .toggle-row input {
-	margin: 3px 0 0;
-	accent-color: var(--accent);
+	appearance: none;
+	position: relative;
+	width: 36px;
+	height: 20px;
+	margin: 0;
+	border-radius: 999px;
+	background: var(--border);
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.toggle-row input::after {
+	content: "";
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: #fff;
+	transition: transform 0.15s ease;
+}
+
+.toggle-row input:checked {
+	background: var(--accent);
+}
+
+.toggle-row input:checked::after {
+	transform: translateX(16px);
 }
 
 .number-row {
 	display: flex;
 	flex-wrap: wrap;
-	align-items: baseline;
-	gap: 4px 8px;
+	align-items: center;
+	gap: 6px 8px;
+}
+
+.settings-group legend + .toggle-row,
+.settings-group legend + .number-row {
+	border-top: 0;
 }
 
 .number-field {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
 	font-variant-numeric: tabular-nums;
 	white-space: nowrap;
 }
@@ -85,14 +140,15 @@ body {
 .hint {
 	flex-basis: 100%;
 	color: var(--muted);
-	font-size: 12px;
+	font-size: 12.5px;
 }
 
 input[type="number"],
 input[type="time"] {
-	padding: 3px 6px;
+	height: 32px;
+	padding: 0 8px;
 	border: 1px solid var(--border);
-	border-radius: 6px;
+	border-radius: var(--radius);
 	background: var(--background);
 	color: var(--foreground);
 	font: inherit;
@@ -101,20 +157,27 @@ input[type="time"] {
 
 input[type="number"] {
 	width: 84px;
-	margin: 0 2px;
 }
 
 input:focus-visible {
 	outline: 2px solid var(--accent);
-	outline-offset: 1px;
+	outline-offset: 2px;
 }
 
 input:disabled {
-	opacity: 0.45;
+	opacity: 0.4;
 }
 
 .time-row {
 	display: flex;
 	gap: 16px;
-	padding-left: 28px;
+	border-top: 0;
+	padding-top: 0;
+}
+
+.time-row label {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--foreground-soft);
 }

@@ -1,5 +1,8 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
 import type { PageWatcher } from "../../lib/site/page-watcher";
+import { amountElement, formatAmount } from "../../lib/ui/amount";
+import { createPanel, note } from "../../lib/ui/panel";
+import { rarityTag } from "../../lib/ui/rarity-tag";
 import type { CardCatalog } from "../cards/card-catalog";
 import { ownedCardsItem } from "../cards/collection-index";
 import type { PriceService } from "../prices/price-service";
@@ -9,33 +12,27 @@ import { collectionExtrasSlot } from "./collection-extras-slot";
 const PANEL_ID = "wmp-best-sales";
 const LIST_LIMIT = 30;
 
-const amountFormatter = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
-
 function copiesText(sale: BestSale): string {
-	const starred = sale.card.starredCopies > 0 ? `, ${sale.card.starredCopies} en favori` : "";
-	const sales = sale.salesCount === null ? "" : ` · ${amountFormatter.format(sale.salesCount)} ventes`;
-	return `×${sale.card.copies}${sale.isDuplicate ? " · doublon" : ""}${starred}${sales}`;
+	const parts = [`×${sale.card.copies}`];
+	if (sale.isDuplicate) parts.push("doublon");
+	if (sale.card.starredCopies > 0) parts.push(`${sale.card.starredCopies} en favori`);
+	if (sale.salesCount !== null) parts.push(`${formatAmount(sale.salesCount)} ventes`);
+	return parts.join(" · ");
 }
 
 function rowFor(sale: BestSale): HTMLLIElement {
 	const row = document.createElement("li");
-	row.className = "wmp-best-sales-row";
-	row.dataset.duplicate = String(sale.isDuplicate);
-	const rarity = document.createElement("span");
-	rarity.className = "wmp-best-sales-rarity";
-	rarity.style.setProperty("--wmp-rarity-color", `var(--color-rarity-${sale.card.rarity.toLowerCase()})`);
-	rarity.textContent = sale.card.rarity;
+	row.className = "wmp-row wmp-best-row";
 	const title = document.createElement("span");
-	title.className = "wmp-best-sales-title";
+	title.className = "wmp-row-title";
 	title.textContent = sale.card.title;
-	const price = document.createElement("span");
-	price.className = "wmp-best-sales-price";
-	price.textContent = `≈ ${amountFormatter.format(sale.average)} W`;
-	if (sale.salesCount !== null) price.title = `${amountFormatter.format(sale.salesCount)} ventes enregistrées`;
+	const price = amountElement(formatAmount(sale.average), "≈ ");
+	if (sale.salesCount !== null) price.title = `${formatAmount(sale.salesCount)} ventes enregistrées`;
 	const copies = document.createElement("span");
-	copies.className = "wmp-best-sales-copies";
+	copies.className = "wmp-chip wmp-best-sales-copies";
+	if (sale.isDuplicate) copies.dataset.tone = "good";
 	copies.textContent = copiesText(sale);
-	row.append(rarity, title, price, copies);
+	row.append(rarityTag(sale.card.rarity), title, price, copies);
 	return row;
 }
 
@@ -45,28 +42,24 @@ export function startBestSalesPanel(
 	catalog: CardCatalog,
 	priceService: PriceService,
 ): void {
-	const panel = document.createElement("details");
-	panel.id = PANEL_ID;
-	panel.className = "wmp-best-sales";
-	const summary = document.createElement("summary");
-	summary.textContent = "Meilleures ventes possibles";
+	const { root: panel, meta, body } = createPanel(PANEL_ID, "Meilleures ventes possibles", "trendingUp");
 	const duplicatesLabel = document.createElement("label");
-	duplicatesLabel.className = "wmp-best-sales-filter";
+	duplicatesLabel.className = "wmp-switch";
 	const duplicatesOnly = document.createElement("input");
 	duplicatesOnly.type = "checkbox";
-	duplicatesLabel.append(duplicatesOnly, " Doublons seulement");
+	duplicatesOnly.setAttribute("role", "switch");
+	duplicatesLabel.append(duplicatesOnly, "Doublons seulement");
 	const list = document.createElement("ol");
-	list.className = "wmp-best-sales-list";
-	const note = document.createElement("p");
-	note.className = "wmp-best-sales-note";
-	panel.append(summary, duplicatesLabel, list, note);
+	list.className = "wmp-rows wmp-best-sales-list";
+	const explanation = note("");
+	body.append(duplicatesLabel, list, explanation);
 
 	async function render(): Promise<void> {
 		if (!panel.open) return;
 		const owned = await ownedCardsItem.getValue();
 		if (owned.length === 0) {
 			list.replaceChildren();
-			note.textContent = "Lecture de ta collection en cours, la liste arrive dans une minute environ.";
+			explanation.textContent = "Lecture de ta collection en cours, la liste arrive dans une minute environ.";
 			void catalog.collectionIndexer.syncIfStale().then(render, () => undefined);
 			return;
 		}
@@ -76,7 +69,8 @@ export function startBestSalesPanel(
 			limit: LIST_LIMIT,
 		});
 		list.replaceChildren(...view.entries.map(rowFor));
-		note.textContent = `Classement fait sur ${view.pricedCards} cartes au prix connu, sur ${view.ownedCards}. Les cartes en favori ne sont pas proposées. Les autres prix s'ajoutent quand tu parcours ta collection.`;
+		meta.textContent = `Top ${view.entries.length}`;
+		explanation.textContent = `Classement fait sur ${view.pricedCards} cartes au prix connu, sur ${view.ownedCards}. Les cartes en favori ne sont pas proposées. Les autres prix s'ajoutent quand tu parcours ta collection.`;
 	}
 
 	panel.addEventListener("toggle", () => void render());

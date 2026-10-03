@@ -1,6 +1,7 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
 import type { RequestQueue } from "../../lib/net/request-queue";
 import type { PageWatcher } from "../../lib/site/page-watcher";
+import { createButton, setButtonContent } from "../../lib/ui/button";
 import { AUCTION_TILE_SELECTOR, TILE_ID_PREFIX, tileActions } from "./auction-tile-actions";
 import {
 	type FollowedAuctions,
@@ -23,9 +24,9 @@ function isMarketplaceRoute(pathname: string): boolean {
 }
 
 function renderFollowButton(button: HTMLButtonElement, isFollowed: boolean): void {
-	button.textContent = isFollowed ? "★ Suivie" : "☆ Suivre";
+	setButtonContent(button, isFollowed ? "Suivie" : "Suivre", "star");
 	button.setAttribute("aria-pressed", String(isFollowed));
-	button.title = isFollowed ? "Ne plus suivre cette enchère" : "Recevoir un rappel 5 min avant la fin";
+	button.title = isFollowed ? "Ne plus suivre cette enchère" : "Recevoir un rappel avant la fin";
 }
 
 export interface MarketFollow {
@@ -69,14 +70,13 @@ export function startMarketFollow(
 			return;
 		}
 		const auction = parseAuctionDetail(await siteApi.getJson(auctionDetailUrl(auctionId)));
-		if (!auction || auction.status !== "active") return;
+		if (auction?.status !== "active") return;
 		await followedAuctionsItem.setValue(followAuction(await followedAuctionsItem.getValue(), auction, "manual"));
 	}
 
 	function createFollowButton(auctionId: string): HTMLButtonElement {
-		const button = document.createElement("button");
-		button.type = "button";
-		button.className = FOLLOW_BUTTON_CLASS;
+		const button = createButton("Suivre", "ghost", "star");
+		button.classList.add(FOLLOW_BUTTON_CLASS);
 		button.addEventListener("click", (event) => {
 			event.preventDefault();
 			event.stopPropagation();

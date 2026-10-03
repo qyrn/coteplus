@@ -28,6 +28,10 @@ export function startPackValueRecap(revealWatcher: RevealWatcher, priceService: 
 	const recap = document.createElement("p");
 	recap.className = RECAP_CLASS;
 	recap.setAttribute("aria-live", "polite");
+	const chip = document.createElement("span");
+	chip.className = "wmp-chip";
+	chip.dataset.tone = "good";
+	recap.append(chip);
 	let session = 0;
 	let value: PackValue = EMPTY_PACK_VALUE;
 
@@ -37,7 +41,7 @@ export function startPackValueRecap(revealWatcher: RevealWatcher, priceService: 
 
 	function update(next: PackValue): void {
 		value = next;
-		recap.textContent = packValueText(value);
+		chip.textContent = packValueText(value);
 	}
 
 	revealWatcher.subscribe((event) => {

@@ -1,4 +1,9 @@
 import type { PageWatcher } from "../../lib/site/page-watcher";
+import { amountElement, signedAmountText } from "../../lib/ui/amount";
+import { createButton, setButtonContent } from "../../lib/ui/button";
+import { icon } from "../../lib/ui/icons";
+import { createPanel, note } from "../../lib/ui/panel";
+import { rarityTag } from "../../lib/ui/rarity-tag";
 import type { PriceService } from "../prices/price-service";
 import { marketExtrasSlot } from "./market-extras-slot";
 import type { MarketFollow } from "./market-follow";
@@ -15,13 +20,7 @@ import type { AuctionSummary } from "./my-market";
 const PANEL_ID = "wmp-market-report";
 const API_LIST_LIMIT = 50;
 
-const amountFormatter = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
 const dateFormatter = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit" });
-
-function signedAmount(amount: number): string {
-	const sign = amount > 0 ? "+" : amount < 0 ? "−" : "";
-	return `${sign}${amountFormatter.format(Math.abs(amount))} W`;
-}
 
 function plural(count: number, singular: string, pluralForm: string): string {
 	return `${count} ${count > 1 ? pluralForm : singular}`;
@@ -36,42 +35,54 @@ function comparisonText(label: string, comparison: AverageComparison, aboveIsGoo
 	return `${label} : ${Math.abs(difference)} % ${direction} de la moyenne (${verdict}, sur ${plural(comparison.comparedCount, "carte", "cartes")}).`;
 }
 
+function historyRow(auction: AuctionSummary, sign: 1 | -1): HTMLLIElement {
+	const row = document.createElement("li");
+	row.className = "wmp-row wmp-history-row";
+	const date = document.createElement("span");
+	date.className = "wmp-row-muted";
+	date.textContent = dateFormatter.format(auction.endAt);
+	const title = document.createElement("span");
+	title.className = "wmp-row-title";
+	title.textContent = auction.title;
+	const amount = amountElement(signedAmountText(sign * finalPriceOf(auction)));
+	amount.dataset.sign = sign > 0 ? "positive" : "negative";
+	row.append(date, rarityTag(auction.rarity), title, amount);
+	return row;
+}
+
 function historyList(label: string, auctions: AuctionSummary[], sign: 1 | -1): HTMLDetailsElement {
 	const details = document.createElement("details");
-	details.className = "wmp-market-history";
+	details.className = "wmp-subpanel";
 	const summary = document.createElement("summary");
-	summary.textContent = `${label} (${auctions.length})`;
+	summary.append(`${label} (${auctions.length})`, icon("chevron"));
 	const list = document.createElement("ul");
-	const rows = [...auctions]
-		.sort((left, right) => right.endAt - left.endAt)
-		.map((auction) => {
-			const row = document.createElement("li");
-			const date = document.createElement("span");
-			date.className = "wmp-market-history-date";
-			date.textContent = dateFormatter.format(auction.endAt);
-			const rarity = document.createElement("span");
-			rarity.className = "wmp-market-history-rarity";
-			rarity.style.setProperty("--wmp-rarity-color", `var(--color-rarity-${auction.rarity.toLowerCase()})`);
-			rarity.textContent = auction.rarity;
-			const title = document.createElement("span");
-			title.className = "wmp-market-history-title";
-			title.textContent = auction.title;
-			const amount = document.createElement("span");
-			amount.className = "wmp-market-history-amount";
-			amount.dataset.sign = sign > 0 ? "positive" : "negative";
-			amount.textContent = signedAmount(sign * finalPriceOf(auction));
-			row.append(date, rarity, title, amount);
-			return row;
-		});
-	list.append(...rows);
+	list.className = "wmp-rows";
+	list.append(
+		...[...auctions].sort((left, right) => right.endAt - left.endAt).map((auction) => historyRow(auction, sign)),
+	);
 	details.append(summary, list);
 	return details;
 }
 
-function line(text: string, className?: string): HTMLParagraphElement {
+function metric(label: string, amount: number, detail: string): HTMLDivElement {
+	const tile = document.createElement("div");
+	tile.className = "wmp-metric";
+	tile.dataset.tone = amount > 0 ? "good" : amount < 0 ? "bad" : "neutral";
+	const name = document.createElement("span");
+	name.className = "wmp-metric-label";
+	name.textContent = label;
+	const value = amountElement(signedAmountText(amount));
+	value.classList.add("wmp-metric-value");
+	const description = document.createElement("span");
+	description.className = "wmp-metric-detail";
+	description.textContent = detail;
+	tile.append(name, value, description);
+	return tile;
+}
+
+function line(text: string): HTMLParagraphElement {
 	const paragraph = document.createElement("p");
 	paragraph.textContent = text;
-	if (className) paragraph.className = className;
 	return paragraph;
 }
 
@@ -80,14 +91,7 @@ export function startMarketReportPanel(
 	marketFollow: MarketFollow,
 	priceService: PriceService,
 ): void {
-	const panel = document.createElement("details");
-	panel.id = PANEL_ID;
-	panel.className = "wmp-market-report";
-	const summary = document.createElement("summary");
-	summary.textContent = "Ton bilan du marché";
-	const body = document.createElement("div");
-	body.className = "wmp-market-report-body";
-	panel.append(summary, body);
+	const { root: panel, meta, body } = createPanel(PANEL_ID, "Ton bilan du marché", "exchange");
 
 	async function cachedAveragesOf(auctions: AuctionSummary[]): Promise<Array<number | null>> {
 		const priced = auctions.flatMap((auction) =>
@@ -99,29 +103,35 @@ export function startMarketReportPanel(
 
 	async function showComparison(button: HTMLButtonElement, current: MarketReport): Promise<void> {
 		button.disabled = true;
-		button.textContent = "Comparaison en cours…";
+		setButtonContent(button, "Comparaison en cours…");
 		const [saleAverages, purchaseAverages] = await Promise.all([
 			cachedAveragesOf(current.sales),
 			cachedAveragesOf(current.purchases),
 		]);
-		button.replaceWith(
+		const comparison = document.createElement("div");
+		comparison.className = "wmp-comparison";
+		comparison.append(
 			line(comparisonText("Tes ventes", compareWithAverages(current.sales, saleAverages), true)),
 			line(comparisonText("Tes achats", compareWithAverages(current.purchases, purchaseAverages), false)),
 		);
+		button.replaceWith(comparison);
 	}
 
 	function render(current: MarketReport, isCapped: boolean): void {
-		const compareButton = document.createElement("button");
-		compareButton.type = "button";
-		compareButton.className = "wmp-market-report-compare";
-		compareButton.textContent = "Comparer aux prix moyens";
+		const compareButton = createButton("Comparer aux prix moyens", "soft");
 		compareButton.addEventListener("click", () => void showComparison(compareButton, current));
 		const unsold = current.unsoldCount > 0 ? `, ${plural(current.unsoldCount, "invendue", "invendues")}` : "";
+		const metrics = document.createElement("div");
+		metrics.className = "wmp-metrics";
+		metrics.append(
+			metric("Ventes", current.earned, `${plural(current.soldCount, "carte vendue", "cartes vendues")}${unsold}`),
+			metric("Achats", -current.spent, plural(current.boughtCount, "carte achetée", "cartes achetées")),
+			metric("Solde", current.net, "ventes moins achats"),
+		);
+		meta.replaceChildren(amountElement(signedAmountText(current.net)));
 		body.replaceChildren(
-			line(`Ventes : ${plural(current.soldCount, "carte", "cartes")}, ${signedAmount(current.earned)}${unsold}`),
-			line(`Achats : ${plural(current.boughtCount, "carte", "cartes")}, ${signedAmount(-current.spent)}`),
-			line(`Solde : ${signedAmount(current.net)}`, "wmp-market-report-net"),
-			...(isCapped ? [line("Calculé sur les 50 dernières enchères de chaque liste.", "wmp-market-report-note")] : []),
+			metrics,
+			...(isCapped ? [note("Calculé sur les 50 dernières enchères de chaque liste.")] : []),
 			compareButton,
 			historyList("Détail des ventes", current.sales, 1),
 			historyList("Détail des achats", current.purchases, -1),

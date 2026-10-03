@@ -9,25 +9,41 @@
 	</head>
 	<body>
 		<header class="popup-header">
-			<h1>WikiMasters Plus</h1>
-			<button type="button" class="link-button" id="open-settings">Réglages</button>
+			<img class="brand-mark" src="/icon/32.png" alt="" width="22" height="22" />
+			<h1>WikiMasters <span class="brand-accent">Plus</span></h1>
+			<button type="button" class="btn btn-ghost" id="open-settings">
+				<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+					<path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4" />
+				</svg>
+				Réglages
+			</button>
 		</header>
 		<p class="pause-notice" id="site-pause" role="status" hidden></p>
-		<section class="popup-section" aria-labelledby="packs-title">
-			<div class="section-head">
-				<h2 id="packs-title">Paquets</h2>
-				<button type="button" class="link-button" id="open-pulls">Ouvrir</button>
+		<section class="card popup-section" aria-labelledby="packs-title">
+			<div class="card-head">
+				<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+					<path d="M21 8 12 3 3 8l9 5 9-5Z" />
+					<path d="m3 13 9 5 9-5" />
+				</svg>
+				<h2 class="card-title" id="packs-title">Paquets</h2>
+				<button type="button" class="btn btn-soft card-action" id="open-pulls">Ouvrir</button>
 			</div>
 			<p class="pack-stock" id="pack-stock"></p>
+			<div class="pack-meter" id="pack-meter" aria-hidden="true"></div>
 			<p class="muted" id="pack-detail"></p>
 		</section>
-		<section class="popup-section" aria-labelledby="auctions-title">
-			<div class="section-head">
-				<h2 id="auctions-title">Enchères suivies</h2>
-				<button type="button" class="link-button" id="open-market">Marché</button>
+		<section class="card popup-section" aria-labelledby="auctions-title">
+			<div class="card-head">
+				<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+					<path
+						d="M12 2.5 14.94 8.46 21.5 9.41 16.75 14.04 17.87 20.58 12 17.5 6.13 20.58 7.25 14.04 2.5 9.41 9.06 8.46Z"
+					/>
+				</svg>
+				<h2 class="card-title" id="auctions-title">Enchères suivies</h2>
+				<button type="button" class="btn btn-soft card-action" id="open-market">Marché</button>
 			</div>
 			<ul class="auction-list" id="auction-list"></ul>
-			<p class="muted" id="auction-empty" hidden>
+			<p class="muted empty-state" id="auction-empty" hidden>
 				Aucune enchère suivie. Clique sur « Suivre » sous une enchère du marché, ou mise : tes enchères sont suivies
 				automatiquement.
 			</p>

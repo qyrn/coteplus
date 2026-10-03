@@ -1,6 +1,9 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
 import type { PageWatcher } from "../../lib/site/page-watcher";
 import { RARITIES } from "../../lib/site/rarity";
+import { createButton, setButtonContent } from "../../lib/ui/button";
+import { createPanelHeader } from "../../lib/ui/panel";
+import { rarityTag } from "../../lib/ui/rarity-tag";
 import { findStockBlock } from "./pack-stock";
 import { emptyCounts, importLegacyPullStatsOnce, type PullStats, pullStatsItem, totalCards } from "./pull-stats";
 
@@ -12,44 +15,38 @@ const countFormatter = new Intl.NumberFormat("fr-FR");
 
 function buildRow(rarity: (typeof RARITIES)[number]): HTMLElement {
 	const row = document.createElement("div");
-	row.className = "wmp-pull-stats-row";
+	row.className = "wmp-pull-row";
 	row.dataset.rarity = rarity;
-	row.style.setProperty("--wmp-rarity-color", `var(--color-rarity-${rarity.toLowerCase()})`);
-	const label = document.createElement("span");
-	label.className = "wmp-pull-stats-rarity";
-	label.textContent = rarity;
 	const bar = document.createElement("span");
-	bar.className = "wmp-pull-stats-bar";
+	bar.className = "wmp-pull-bar";
 	bar.append(document.createElement("span"));
 	const percent = document.createElement("span");
-	percent.className = "wmp-pull-stats-percent";
+	percent.className = "wmp-pull-percent";
 	const count = document.createElement("span");
-	count.className = "wmp-pull-stats-count";
-	row.append(label, bar, percent, count);
+	count.className = "wmp-pull-count";
+	row.append(rarityTag(rarity), bar, percent, count);
 	return row;
 }
 
 export function startPullStatsPanel(ctx: ContentScriptContext, pageWatcher: PageWatcher): void {
 	const panel = document.createElement("section");
 	panel.id = PANEL_ID;
-	panel.className = "wmp-pull-stats";
+	panel.className = "wmp-panel wmp-pull-stats";
 	panel.setAttribute("aria-label", "Drop rate de tes paquets");
-	const header = document.createElement("div");
-	header.className = "wmp-pull-stats-header";
-	const title = document.createElement("h2");
-	title.textContent = "Drop rate";
+	const header = createPanelHeader("Drop rate", "barChart");
 	const total = document.createElement("span");
-	total.className = "wmp-pull-stats-total";
-	header.append(title, total);
+	total.className = "wmp-panel-meta";
+	header.append(total);
 	const rows = RARITIES.toReversed().map(buildRow);
-	const resetButton = document.createElement("button");
-	resetButton.type = "button";
-	resetButton.className = "wmp-pull-stats-reset";
-	panel.append(header, ...rows, resetButton);
+	const resetButton = createButton("Remettre à zéro", "quiet");
+	const body = document.createElement("div");
+	body.className = "wmp-panel-body";
+	body.append(...rows, resetButton);
+	panel.append(header, body);
 
 	let confirmingReset = false;
 	function renderResetButton(): void {
-		resetButton.textContent = confirmingReset ? "Confirmer la remise à zéro" : "Remettre à zéro";
+		setButtonContent(resetButton, confirmingReset ? "Confirmer la remise à zéro" : "Remettre à zéro");
 	}
 	resetButton.addEventListener("click", () => {
 		if (!confirmingReset) {

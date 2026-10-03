@@ -4,7 +4,7 @@ import type { PageWatcher } from "../../lib/site/page-watcher";
 import { handleCardsWhenVisible } from "../../lib/site/visible-cards";
 import type { PriceService } from "../prices/price-service";
 import type { LiveSettings } from "../settings/live-settings";
-import { compareToAverage, dealText, readAuctionPrice } from "./auction-deal";
+import { type AuctionDeal, compareToAverage, dealText, readAuctionPrice } from "./auction-deal";
 import { AUCTION_TILE_SELECTOR } from "./auction-tile-actions";
 
 const DEAL_CHIP_CLASS = "wmp-deal-chip";
@@ -30,14 +30,16 @@ function isHandled(card: CardView): boolean {
 	return !auction || auction.tile.getAttribute(HANDLED_KEY_ATTRIBUTE) === auction.key;
 }
 
-function renderDeal(auction: AuctionTile, text: string | null, isGreatDeal: boolean): void {
+const DEAL_TONES = { great: "great", fair: "neutral", expensive: "bad" } as const;
+
+function renderDeal(auction: AuctionTile, deal: AuctionDeal | null): void {
 	auction.tile.querySelector(`.${DEAL_CHIP_CLASS}`)?.remove();
-	auction.tile.classList.toggle(GREAT_DEAL_CLASS, isGreatDeal);
-	if (!text) return;
+	auction.tile.classList.toggle(GREAT_DEAL_CLASS, deal?.level === "great");
+	if (!deal) return;
 	const chip = document.createElement("span");
-	chip.className = DEAL_CHIP_CLASS;
-	chip.dataset.level = isGreatDeal ? "great" : "other";
-	chip.textContent = text;
+	chip.className = `wmp-chip ${DEAL_CHIP_CLASS}`;
+	chip.dataset.tone = DEAL_TONES[deal.level];
+	chip.textContent = dealText(deal);
 	const priceRow = auction.priceElement.parentElement?.parentElement;
 	priceRow?.insertAdjacentElement("afterend", chip);
 }
@@ -50,7 +52,7 @@ async function showDeal(card: CardView, priceService: PriceService, settings: Li
 	const current = readAuctionTile(card);
 	if (current?.key !== auction.key) return;
 	const deal = average === null ? null : compareToAverage(auction.amount, average, settings.current().greatDealPercent);
-	renderDeal(current, deal ? dealText(deal) : null, deal?.level === "great");
+	renderDeal(current, deal);
 }
 
 export function startMarketDeals(

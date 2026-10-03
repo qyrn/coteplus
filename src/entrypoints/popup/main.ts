@@ -22,6 +22,7 @@ function requireElement<TElement extends HTMLElement>(id: string, type: new () =
 const packElements = {
 	stock: requireElement("pack-stock", HTMLParagraphElement),
 	detail: requireElement("pack-detail", HTMLParagraphElement),
+	meter: requireElement("pack-meter", HTMLDivElement),
 };
 const pauseNotice = requireElement("site-pause", HTMLParagraphElement);
 const timeFormatter = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });

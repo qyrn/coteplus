@@ -1,6 +1,7 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
 import { findCards } from "../../lib/site/card-dom";
 import type { PageWatcher } from "../../lib/site/page-watcher";
+import { icon } from "../../lib/ui/icons";
 import type { PriceService } from "../prices/price-service";
 import type { LiveSettings } from "../settings/live-settings";
 import { discardWarnings } from "./discard-guard";
@@ -11,6 +12,8 @@ const LAST_COPY_TEXT = "dernière copie";
 const STARRED_SELECTOR = 'button[aria-label="Retirer des favoris"]';
 const CARD_OVERLAY_SELECTOR = ".fixed.inset-0";
 const GUARD_CLASS = "wmp-discard-guard";
+const CHECKING_CLASS = "wmp-discard-guard-checking";
+const GUARD_BOX_ATTRIBUTE = "data-wmp-guard-box";
 const STATE_ATTRIBUTE = "data-wmp-discard-guard";
 
 type GuardState = "checking" | "armed" | "confirmed" | "clear";
@@ -30,10 +33,11 @@ function findConfirmButton(dialog: HTMLElement): HTMLButtonElement | null {
 	return [...dialog.querySelectorAll("button")].find((button) => button.textContent?.trim() === CONFIRM_LABEL) ?? null;
 }
 
-function insertGuard(dialog: HTMLElement, content: HTMLElement[]): HTMLElement {
-	dialog.querySelector(`.${GUARD_CLASS}`)?.remove();
+function insertGuard(dialog: HTMLElement, className: string, content: HTMLElement[]): HTMLElement {
+	dialog.querySelector(`[${GUARD_BOX_ATTRIBUTE}]`)?.remove();
 	const guard = document.createElement("div");
-	guard.className = GUARD_CLASS;
+	guard.className = className;
+	guard.setAttribute(GUARD_BOX_ATTRIBUTE, "");
 	guard.append(...content);
 	const buttonsRow = findConfirmButton(dialog)?.parentElement;
 	if (buttonsRow?.parentElement === dialog) buttonsRow.before(guard);
@@ -43,16 +47,16 @@ function insertGuard(dialog: HTMLElement, content: HTMLElement[]): HTMLElement {
 
 function showChecking(dialog: HTMLElement): void {
 	const text = document.createElement("p");
-	text.className = "wmp-discard-guard-checking";
+	text.className = "wmp-note";
 	text.textContent = "Vérification du prix moyen…";
-	insertGuard(dialog, [text]);
+	insertGuard(dialog, CHECKING_CLASS, [text]);
 	setState(dialog, "checking");
 }
 
 function showWarnings(dialog: HTMLElement, warnings: string[]): void {
 	const title = document.createElement("p");
 	title.className = "wmp-discard-guard-title";
-	title.textContent = "Attention avant de défausser";
+	title.append(icon("alert"), "Attention avant de défausser");
 	const list = document.createElement("ul");
 	list.append(
 		...warnings.map((warning) => {
@@ -66,13 +70,13 @@ function showWarnings(dialog: HTMLElement, warnings: string[]): void {
 	confirm.type = "checkbox";
 	confirm.addEventListener("change", () => setState(dialog, confirm.checked ? "confirmed" : "armed"));
 	label.append(confirm, " Je la défausse quand même");
-	const guard = insertGuard(dialog, [title, list, label]);
+	const guard = insertGuard(dialog, GUARD_CLASS, [title, list, label]);
 	guard.setAttribute("role", "alert");
 	setState(dialog, "armed");
 }
 
 function clearGuard(dialog: HTMLElement): void {
-	dialog.querySelector(`.${GUARD_CLASS}`)?.remove();
+	dialog.querySelector(`[${GUARD_BOX_ATTRIBUTE}]`)?.remove();
 	setState(dialog, "clear");
 }
 

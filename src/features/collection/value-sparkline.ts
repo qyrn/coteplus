@@ -24,9 +24,12 @@ export function createSparkline(values: readonly number[], label: string): SVGSV
 	svg.setAttribute("role", "img");
 	svg.setAttribute("aria-label", label);
 	svg.classList.add("wmp-value-sparkline");
+	const points = sparklinePoints(values, WIDTH, HEIGHT, PADDING);
+	const area = document.createElementNS(SVG_NAMESPACE, "polygon");
+	area.setAttribute("points", `${PADDING},${HEIGHT} ${points} ${WIDTH - PADDING},${HEIGHT}`);
 	const line = document.createElementNS(SVG_NAMESPACE, "polyline");
-	line.setAttribute("points", sparklinePoints(values, WIDTH, HEIGHT, PADDING));
+	line.setAttribute("points", points);
 	line.setAttribute("vector-effect", "non-scaling-stroke");
-	svg.append(line);
+	svg.append(area, line);
 	return svg;
 }

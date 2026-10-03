@@ -1,3 +1,4 @@
+import { icon } from "../../lib/ui/icons";
 import type { PriceStats } from "./price-summary";
 
 export type PriceBadgeState =
@@ -13,12 +14,26 @@ const priceFormatter = new Intl.NumberFormat("fr-FR", {
 	maximumFractionDigits: 0,
 });
 
-function badgeText(state: PriceBadgeState): string {
+function averageContent(amountText: string): Array<Node | string> {
+	const label = document.createElement("span");
+	label.className = "wmp-price-badge-label";
+	label.textContent = "Moy.";
+	return [label, icon("coin"), amountText];
+}
+
+function badgeContent(state: PriceBadgeState): Array<Node | string> {
 	switch (state.kind) {
 		case "loading":
-			return "Moy. …";
+			return averageContent("…");
 		case "price":
-			return `Moy. ${priceFormatter.format(state.stats.average)} W`;
+			return averageContent(priceFormatter.format(state.stats.average));
+		default:
+			return [badgeText(state)];
+	}
+}
+
+function badgeText(state: Exclude<PriceBadgeState, { kind: "loading" | "price" }>): string {
+	switch (state.kind) {
 		case "none":
 			return "Aucune vente";
 		case "error":
@@ -47,7 +62,7 @@ export function renderPriceBadge(cardElement: HTMLElement, heading: HTMLElement,
 	const badge = findPriceBadge(cardElement) ?? document.createElement("span");
 	badge.className = PRICE_BADGE_CLASS;
 	badge.dataset.state = state.kind;
-	badge.textContent = badgeText(state);
+	badge.replaceChildren(...badgeContent(state));
 	badge.title = badgeTooltip(state);
 	if (badge.previousElementSibling !== heading) heading.insertAdjacentElement("afterend", badge);
 }

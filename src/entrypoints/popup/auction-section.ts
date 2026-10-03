@@ -1,4 +1,5 @@
 import type { FollowedAuction } from "../../features/market/followed-auctions";
+import { icon } from "../../lib/ui/icons";
 import { timeUntil } from "./relative-time";
 
 export interface AuctionSectionElements {
@@ -17,7 +18,7 @@ function buildRow(auction: FollowedAuction, now: number, actions: AuctionActions
 	row.dataset.ended = String(auction.endAt <= now);
 
 	const rarity = document.createElement("span");
-	rarity.className = "rarity-pill";
+	rarity.className = "rarity";
 	rarity.dataset.rarity = auction.rarity;
 	rarity.textContent = auction.rarity;
 
@@ -35,8 +36,8 @@ function buildRow(auction: FollowedAuction, now: number, actions: AuctionActions
 
 	const unfollowButton = document.createElement("button");
 	unfollowButton.type = "button";
-	unfollowButton.className = "auction-unfollow";
-	unfollowButton.textContent = "×";
+	unfollowButton.className = "btn btn-icon";
+	unfollowButton.append(icon("close"));
 	unfollowButton.setAttribute("aria-label", `Ne plus suivre ${auction.title}`);
 	unfollowButton.addEventListener("click", () => actions.unfollow(auction));
 

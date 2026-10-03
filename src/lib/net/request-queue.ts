@@ -12,6 +12,12 @@ export class NonRetryableError extends Error {
 	override name = "NonRetryableError";
 }
 
+export class SkippedRequestError extends NonRetryableError {
+	override name = "SkippedRequestError";
+}
+
+export type StillWanted = () => boolean;
+
 export interface RequestQueueOptions {
 	concurrency: number;
 	minIntervalMs: number;
@@ -26,11 +32,12 @@ export interface RequestQueueOptions {
 export type RequestPriority = "visible" | "background";
 
 export interface RequestQueue {
-	getJson(url: string, priority?: RequestPriority): Promise<unknown>;
+	getJson(url: string, priority?: RequestPriority, isWanted?: StillWanted): Promise<unknown>;
 }
 
 interface PendingRequest {
 	url: string;
+	isWanted: StillWanted | undefined;
 	resolve: (value: unknown) => void;
 	reject: (reason: unknown) => void;
 }
@@ -111,7 +118,11 @@ export function createRequestQueue(options: RequestQueueOptions): RequestQueue {
 	}
 
 	function takeNext(): PendingRequest | undefined {
-		return pendingByPriority.visible.shift() ?? pendingByPriority.background.shift();
+		for (;;) {
+			const next = pendingByPriority.visible.shift() ?? pendingByPriority.background.shift();
+			if (!next || next.isWanted === undefined || next.isWanted()) return next;
+			next.reject(new SkippedRequestError(`Requête abandonnée : ${next.url}`));
+		}
 	}
 
 	function hasPending(): boolean {
@@ -136,9 +147,9 @@ export function createRequestQueue(options: RequestQueueOptions): RequestQueue {
 	}
 
 	return {
-		getJson(url, priority = "visible") {
+		getJson(url, priority = "visible", isWanted) {
 			return new Promise((resolve, reject) => {
-				pendingByPriority[priority].push({ url, resolve, reject });
+				pendingByPriority[priority].push({ url, isWanted, resolve, reject });
 				pump();
 			});
 		},

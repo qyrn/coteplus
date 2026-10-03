@@ -30,6 +30,10 @@ export function readCard(element: HTMLElement): CardView | null {
 	return { element, heading, title, rarity };
 }
 
+export function isStillShown(card: CardView): boolean {
+	return card.element.isConnected && readCard(card.element)?.title === card.title;
+}
+
 export function findCards(root: ParentNode): CardView[] {
 	return [...root.querySelectorAll<HTMLElement>(CARD_SELECTOR)]
 		.map(readCard)

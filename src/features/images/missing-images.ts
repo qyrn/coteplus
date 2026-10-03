@@ -1,5 +1,5 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
-import { type CardView, readCard } from "../../lib/site/card-dom";
+import { type CardView, isStillShown } from "../../lib/site/card-dom";
 import type { PageWatcher } from "../../lib/site/page-watcher";
 import { handleCardsWhenVisible } from "../../lib/site/visible-cards";
 import type { CardCatalog } from "../cards/card-catalog";
@@ -19,11 +19,11 @@ function isHandled(card: CardView): boolean {
 
 async function fillMissingImage(card: CardView, catalog: CardCatalog, imageService: CardImageService): Promise<void> {
 	card.element.setAttribute(HANDLED_TITLE_ATTRIBUTE, card.title);
-	const cardRef = await catalog.resolve(card.title, card.rarity).catch(() => null);
-	if (cardRef?.hideImage) return;
+	const cardRef = await catalog.resolve(card.title, card.rarity, () => isStillShown(card)).catch(() => null);
+	if (cardRef?.hideImage || !isStillShown(card)) return;
 	const image = await imageService.findImage(card.title).catch(() => null);
 	const placeholder = findPlaceholder(card);
-	if (!placeholder || readCard(card.element)?.title !== card.title) return;
+	if (!placeholder || !isStillShown(card)) return;
 	if (image) showImage(card, placeholder, image);
 	else showCover(card, placeholder);
 }

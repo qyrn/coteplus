@@ -1,6 +1,6 @@
 import { CACHE_NAMESPACES } from "../../lib/cache/namespaces";
 import { createTtlStore } from "../../lib/cache/ttl-store";
-import type { RequestQueue } from "../../lib/net/request-queue";
+import type { RequestQueue, StillWanted } from "../../lib/net/request-queue";
 import type { Rarity } from "../../lib/site/rarity";
 import type { CardRef, TitledCardRef } from "./card-ref";
 import { catalogSearchUrl, findCardInSearch } from "./catalog-search";
@@ -16,7 +16,7 @@ interface CardLookup {
 
 export interface CardCatalog {
 	collectionIndexer: CollectionIndexer;
-	resolve(title: string, rarity: Rarity): Promise<CardRef | null>;
+	resolve(title: string, rarity: Rarity, isWanted?: StillWanted): Promise<CardRef | null>;
 	learnFrom(loading: Promise<TitledCardRef[]>): void;
 }
 
@@ -41,23 +41,23 @@ export function createCardCatalog(queue: RequestQueue): CardCatalog {
 
 	const collectionIndexer = createCollectionIndexer(queue, remember);
 
-	async function lookup(title: string, rarity: Rarity): Promise<CardRef | null> {
+	async function lookup(title: string, rarity: Rarity, isWanted?: StillWanted): Promise<CardRef | null> {
 		const key = cardKey(title, rarity);
 		await Promise.all([collectionIndexer.whenIdle(), ...pendingLearning]);
 		const cached = await lookupStore.get(key);
 		if (cached) return cached.value.card;
-		const card = findCardInSearch(await queue.getJson(catalogSearchUrl(title)), title, rarity);
+		const card = findCardInSearch(await queue.getJson(catalogSearchUrl(title), "visible", isWanted), title, rarity);
 		await lookupStore.set(key, { card }, card ? CARD_REF_TTL_MS : UNKNOWN_CARD_TTL_MS);
 		return card;
 	}
 
 	return {
 		collectionIndexer,
-		resolve(title, rarity) {
+		resolve(title, rarity, isWanted) {
 			const key = cardKey(title, rarity);
 			const existing = inFlight.get(key);
 			if (existing) return existing;
-			const resolving = lookup(title, rarity).finally(() => inFlight.delete(key));
+			const resolving = lookup(title, rarity, isWanted).finally(() => inFlight.delete(key));
 			inFlight.set(key, resolving);
 			return resolving;
 		},

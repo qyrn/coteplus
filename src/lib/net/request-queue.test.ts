@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createRequestQueue, HttpError } from "./request-queue";
+import { createRequestQueue, HttpError, SkippedRequestError } from "./request-queue";
 
 function jsonResponse(status: number, body: unknown = {}, headers: Record<string, string> = {}): Response {
 	return new Response(JSON.stringify(body), { status, headers });
@@ -105,5 +105,17 @@ describe("per-minute cap", () => {
 		});
 		await Promise.all([queue.getJson("/a"), queue.getJson("/b"), queue.getJson("/c")]);
 		expect(sleeps).toEqual([60_000]);
+	});
+
+	it("drops a queued request that is no longer wanted", async () => {
+		const fetcher = vi.fn(async () => jsonResponse(200, {}));
+		const queue = createRequestQueue({ ...baseOptions(fetcher), concurrency: 1 });
+		let wanted = true;
+		const first = queue.getJson("/first");
+		const second = queue.getJson("/second", "visible", () => wanted);
+		wanted = false;
+		await first;
+		await expect(second).rejects.toBeInstanceOf(SkippedRequestError);
+		expect(fetcher).toHaveBeenCalledTimes(1);
 	});
 });

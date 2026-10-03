@@ -1,6 +1,6 @@
 import { CACHE_NAMESPACES } from "../../lib/cache/namespaces";
 import { createTtlStore } from "../../lib/cache/ttl-store";
-import type { RequestPriority, RequestQueue } from "../../lib/net/request-queue";
+import type { RequestPriority, RequestQueue, StillWanted } from "../../lib/net/request-queue";
 import type { Rarity } from "../../lib/site/rarity";
 import type { CardCatalog } from "../cards/card-catalog";
 import { type PriceStats, type PriceSummary, parsePriceSummary, pickPriceStats } from "./price-summary";
@@ -21,7 +21,7 @@ export interface PricedCardKey {
 }
 
 export interface PriceService {
-	getAveragePrice(title: string, rarity: Rarity): Promise<AveragePrice>;
+	getAveragePrice(title: string, rarity: Rarity, isWanted?: StillWanted): Promise<AveragePrice>;
 	cachedPriceStats(cards: readonly PricedCardKey[]): Promise<Map<string, PriceStats>>;
 }
 
@@ -33,12 +33,12 @@ export function createPriceService(queue: RequestQueue, catalog: CardCatalog): P
 	const summaryStore = createTtlStore<PriceSummary>(CACHE_NAMESPACES.priceSummary);
 	const inFlight = new Map<string, Promise<PriceSummary>>();
 
-	function fetchSummary(cardId: string, priority: RequestPriority): Promise<PriceSummary> {
+	function fetchSummary(cardId: string, priority: RequestPriority, isWanted?: StillWanted): Promise<PriceSummary> {
 		const existing = inFlight.get(cardId);
 		if (existing) return existing;
 		const loading = (async () => {
 			const url = `/api/marketplace/cards/${encodeURIComponent(cardId)}/sales?scope=summary`;
-			const summary = parsePriceSummary(await queue.getJson(url, priority));
+			const summary = parsePriceSummary(await queue.getJson(url, priority, isWanted));
 			await summaryStore.set(cardId, summary, PRICE_SUMMARY_TTL_MS);
 			return summary;
 		})().finally(() => inFlight.delete(cardId));
@@ -57,11 +57,11 @@ export function createPriceService(queue: RequestQueue, catalog: CardCatalog): P
 			}
 			return found;
 		},
-		async getAveragePrice(title, rarity) {
-			const cardId = (await catalog.resolve(title, rarity))?.cardId;
+		async getAveragePrice(title, rarity, isWanted) {
+			const cardId = (await catalog.resolve(title, rarity, isWanted))?.cardId;
 			if (!cardId) return { average: null, stats: null, refreshed: null };
 			const cached = await summaryStore.get(cardId);
-			const stats = pickPriceStats(cached ? cached.value : await fetchSummary(cardId, "visible"), rarity);
+			const stats = pickPriceStats(cached ? cached.value : await fetchSummary(cardId, "visible", isWanted), rarity);
 			return {
 				average: stats?.average ?? null,
 				stats,

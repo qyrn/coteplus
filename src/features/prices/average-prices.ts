@@ -1,6 +1,6 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
 import { SiteApiPausedError } from "../../lib/net/site-api-guard";
-import { type CardView, readCard } from "../../lib/site/card-dom";
+import { type CardView, isStillShown, readCard } from "../../lib/site/card-dom";
 import type { PageWatcher } from "../../lib/site/page-watcher";
 import { handleCardsWhenVisible } from "../../lib/site/visible-cards";
 import { findPriceBadge, type PriceBadgeState, renderPriceBadge } from "./price-badge";
@@ -26,7 +26,7 @@ async function showAveragePrice(card: CardView, priceService: PriceService): Pro
 	card.element.setAttribute(RENDERED_TITLE_ATTRIBUTE, card.title);
 	renderPriceBadge(card.element, card.heading, { kind: "loading" });
 	try {
-		const price = await priceService.getAveragePrice(card.title, card.rarity);
+		const price = await priceService.getAveragePrice(card.title, card.rarity, () => isStillShown(card));
 		renderIfStillShown(card, badgeStateFor(price.stats));
 		price.refreshed?.then((stats) => renderIfStillShown(card, badgeStateFor(stats))).catch(() => undefined);
 	} catch (error) {

@@ -1,5 +1,5 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
-import type { CardView } from "../../lib/site/card-dom";
+import { type CardView, isStillShown } from "../../lib/site/card-dom";
 import type { PageWatcher } from "../../lib/site/page-watcher";
 import { handleCardsWhenVisible } from "../../lib/site/visible-cards";
 import type { PriceService } from "../prices/price-service";
@@ -46,7 +46,9 @@ async function showDeal(card: CardView, priceService: PriceService, settings: Li
 	const auction = readAuctionTile(card);
 	if (!auction) return;
 	auction.tile.setAttribute(HANDLED_KEY_ATTRIBUTE, auction.key);
-	const { average } = await priceService.getAveragePrice(card.title, card.rarity).catch(() => ({ average: null }));
+	const { average } = await priceService
+		.getAveragePrice(card.title, card.rarity, () => isStillShown(card))
+		.catch(() => ({ average: null }));
 	const current = readAuctionTile(card);
 	if (current?.key !== auction.key) return;
 	const deal = average === null ? null : compareToAverage(auction.amount, average, settings.current().greatDealPercent);

@@ -4,6 +4,8 @@ import { AUCTION_TILE_SELECTOR } from "./auction-tile-actions";
 
 const TILE_SELLER_PREFIX = "Vendu par";
 const DETAIL_SELLER_PREFIX = "Mis en vente par";
+const BID_HISTORY_PREFIX = "Historique des mises";
+const UNKNOWN_BIDDER = "Joueur";
 const PROFILE_ATTRIBUTE = "data-wmp-profile";
 const DETAIL_PATH_PATTERN = /^\/marketplace\/[0-9a-f-]{36}$/i;
 
@@ -53,6 +55,20 @@ function linkDetailSeller(): void {
 	markAsProfileLink(usernameElement, username);
 }
 
+function linkBidders(): void {
+	const heading = [...document.querySelectorAll("main h2")].find((element) =>
+		element.textContent?.trim().startsWith(BID_HISTORY_PREFIX),
+	);
+	const list = heading?.nextElementSibling;
+	if (!(list instanceof HTMLUListElement)) return;
+	for (const item of list.children) {
+		const nameElement = item.firstElementChild;
+		const username = nameElement?.textContent?.trim();
+		if (!(nameElement instanceof HTMLElement) || !username || username === UNKNOWN_BIDDER) continue;
+		if (nameElement.getAttribute(PROFILE_ATTRIBUTE) !== username) markAsProfileLink(nameElement, username);
+	}
+}
+
 function profileTarget(event: Event): string | null {
 	const target = event.target instanceof Element ? event.target.closest(`[${PROFILE_ATTRIBUTE}]`) : null;
 	return target?.getAttribute(PROFILE_ATTRIBUTE) ?? null;
@@ -64,7 +80,7 @@ function openProfile(event: Event, username: string): void {
 	location.assign(profilePath(username));
 }
 
-export function startSellerProfileLinks(ctx: ContentScriptContext, pageWatcher: PageWatcher): void {
+export function startPlayerProfileLinks(ctx: ContentScriptContext, pageWatcher: PageWatcher): void {
 	ctx.addEventListener(
 		document,
 		"click",
@@ -86,6 +102,9 @@ export function startSellerProfileLinks(ctx: ContentScriptContext, pageWatcher: 
 
 	pageWatcher.subscribe(() => {
 		if (location.pathname === "/marketplace") linkTileSellers();
-		else if (DETAIL_PATH_PATTERN.test(location.pathname)) linkDetailSeller();
+		else if (DETAIL_PATH_PATTERN.test(location.pathname)) {
+			linkDetailSeller();
+			linkBidders();
+		}
 	});
 }

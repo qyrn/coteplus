@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findTileSellerName, profilePath } from "./seller-profile-links";
+import { findTileSellerName, profilePath } from "./player-profile-links";
 
 describe("findTileSellerName", () => {
 	it("finds the text node holding the seller name", () => {

@@ -58,5 +58,9 @@ describe("trade value texts", () => {
 			"Bilan pour toi : −300 W",
 		);
 		expect(balanceText({ total: 50, unpricedCards: 0 }, { total: 50, unpricedCards: 0 })).toBe("Échange équilibré");
+		expect(balanceText({ total: 0, unpricedCards: 1 }, { total: 0, unpricedCards: 0 })).toBe("Bilan incomplet");
+		expect(balanceText({ total: 100, unpricedCards: 0 }, { total: 300, unpricedCards: 2 })).toBe(
+			"Bilan pour toi : +200 W (incomplet)",
+		);
 	});
 });

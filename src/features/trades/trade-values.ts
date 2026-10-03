@@ -9,6 +9,7 @@ const HANDLED_KEY_ATTRIBUTE = "data-wmp-trade-for";
 const SIDE_VALUE_CLASS = "wmp-trade-side-value";
 const BALANCE_CLASS = "wmp-trade-balance";
 const IMPACT_CLASS = "wmp-trade-impact";
+const PENDING_STATUS = "En attente";
 
 const amountFormatter = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
 
@@ -22,11 +23,21 @@ export function sideValueText(value: SideValue): string {
 	return `≈ ${amountFormatter.format(value.total)} W${unpriced}`;
 }
 
+export function isBalanceComplete(mine: SideValue, theirs: SideValue): boolean {
+	return mine.unpricedCards === 0 && theirs.unpricedCards === 0;
+}
+
 export function balanceText(mine: SideValue, theirs: SideValue): string {
 	const balance = Math.round(theirs.total - mine.total);
-	if (balance === 0) return "Échange équilibré";
+	const complete = isBalanceComplete(mine, theirs);
+	if (balance === 0) return complete ? "Échange équilibré" : "Bilan incomplet";
 	const sign = balance > 0 ? "+" : "−";
-	return `Bilan pour toi : ${sign}${amountFormatter.format(Math.abs(balance))} W`;
+	const amount = `Bilan pour toi : ${sign}${amountFormatter.format(Math.abs(balance))} W`;
+	return complete ? amount : `${amount} (incomplet)`;
+}
+
+function isPendingTrade(trade: HTMLElement): boolean {
+	return trade.textContent?.includes(PENDING_STATUS) ?? false;
 }
 
 async function estimateSideValue(side: TradeSide, priceService: PriceService): Promise<SideValue> {
@@ -92,12 +103,15 @@ async function showTradeValues(trade: HTMLElement, sides: TradeSide[], priceServ
 		if (value && (side.cards.length > 0 || side.wikibidous > 0)) renderSideValue(side, value);
 	});
 	const owned = ownedByTitle(ownedCards);
-	if (owned.size > 0) for (const side of sides) renderImpact(side, owned);
+	if (owned.size > 0 && isPendingTrade(trade)) for (const side of sides) renderImpact(side, owned);
 	const mineIndex = sides.findIndex((side) => side.isMine);
 	const theirsIndex = sides.findIndex((side) => !side.isMine);
 	const mine = values[mineIndex];
 	const theirs = values[theirsIndex];
-	if (mine && theirs) renderBalance(trade, balanceText(mine, theirs), Math.round(theirs.total - mine.total));
+	if (mine && theirs) {
+		const tone = isBalanceComplete(mine, theirs) ? Math.round(theirs.total - mine.total) : 0;
+		renderBalance(trade, balanceText(mine, theirs), tone);
+	}
 }
 
 export function startTradeValues(pageWatcher: PageWatcher, priceService: PriceService): void {

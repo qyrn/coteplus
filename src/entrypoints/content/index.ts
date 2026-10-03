@@ -24,6 +24,7 @@ import { createPageWatcher } from "../../lib/site/page-watcher";
 
 const WIKIMEDIA_USER_AGENT = "WikiMastersPlus/0.1 (extension navigateur)";
 const OPENVERSE_MIN_INTERVAL_MS = 4000;
+const SITE_REQUESTS_PER_MINUTE = 30;
 
 export default defineContentScript({
 	matches: ["https://www.wiki-masters.com/*"],
@@ -32,6 +33,7 @@ export default defineContentScript({
 		const siteApi = createRequestQueue({
 			concurrency: 2,
 			minIntervalMs: 400,
+			maxPerMinute: SITE_REQUESTS_PER_MINUTE,
 			maxRetries: 2,
 			baseBackoffMs: 2000,
 			fetcher: createGuardedSiteFetcher(location.origin),

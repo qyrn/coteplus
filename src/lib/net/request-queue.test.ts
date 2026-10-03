@@ -85,3 +85,25 @@ describe("request priority", () => {
 		expect(order).toEqual(["/first", "/visible", "/background"]);
 	});
 });
+
+describe("per-minute cap", () => {
+	it("waits for the window to slide once the cap is reached", async () => {
+		let clock = 0;
+		const sleeps: number[] = [];
+		const queue = createRequestQueue({
+			concurrency: 5,
+			minIntervalMs: 0,
+			maxPerMinute: 2,
+			maxRetries: 0,
+			baseBackoffMs: 0,
+			fetcher: async () => jsonResponse(200, {}),
+			now: () => clock,
+			sleep: async (durationMs) => {
+				sleeps.push(durationMs);
+				clock += durationMs;
+			},
+		});
+		await Promise.all([queue.getJson("/a"), queue.getJson("/b"), queue.getJson("/c")]);
+		expect(sleeps).toEqual([60_000]);
+	});
+});

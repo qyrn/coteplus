@@ -15,6 +15,7 @@ export class NonRetryableError extends Error {
 export interface RequestQueueOptions {
 	concurrency: number;
 	minIntervalMs: number;
+	maxPerMinute?: number;
 	maxRetries: number;
 	baseBackoffMs: number;
 	fetcher: (url: string) => Promise<Response>;
@@ -33,6 +34,8 @@ interface PendingRequest {
 	resolve: (value: unknown) => void;
 	reject: (reason: unknown) => void;
 }
+
+const MINUTE_MS = 60 * 1000;
 
 function wait(durationMs: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, durationMs));
@@ -59,6 +62,23 @@ export function createRequestQueue(options: RequestQueueOptions): RequestQueue {
 	let activeCount = 0;
 	let lastStartedAt = Number.NEGATIVE_INFINITY;
 	let pumpScheduled = false;
+	const startsInLastMinute: number[] = [];
+
+	function delayBeforeNextStart(): number {
+		const current = now();
+		while (startsInLastMinute.length > 0 && (startsInLastMinute[0] ?? 0) <= current - MINUTE_MS) {
+			startsInLastMinute.shift();
+		}
+		const intervalDelay = lastStartedAt + options.minIntervalMs - current;
+		const oldestStart = startsInLastMinute[0];
+		const windowDelay =
+			options.maxPerMinute !== undefined &&
+			startsInLastMinute.length >= options.maxPerMinute &&
+			oldestStart !== undefined
+				? oldestStart + MINUTE_MS - current
+				: 0;
+		return Math.max(intervalDelay, windowDelay);
+	}
 
 	async function fetchWithRetries(url: string): Promise<unknown> {
 		for (let attempt = 0; ; attempt++) {
@@ -81,6 +101,7 @@ export function createRequestQueue(options: RequestQueueOptions): RequestQueue {
 	function start(request: PendingRequest): void {
 		activeCount++;
 		lastStartedAt = now();
+		startsInLastMinute.push(lastStartedAt);
 		fetchWithRetries(request.url)
 			.then(request.resolve, request.reject)
 			.finally(() => {
@@ -100,7 +121,7 @@ export function createRequestQueue(options: RequestQueueOptions): RequestQueue {
 	function pump(): void {
 		if (pumpScheduled) return;
 		while (activeCount < options.concurrency && hasPending()) {
-			const delayMs = lastStartedAt + options.minIntervalMs - now();
+			const delayMs = delayBeforeNextStart();
 			if (delayMs > 0) {
 				pumpScheduled = true;
 				void sleep(delayMs).then(() => {

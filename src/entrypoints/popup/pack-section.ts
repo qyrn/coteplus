@@ -1,4 +1,4 @@
-import { estimateStock, fullStockAt, type PackStockState } from "../../features/packs/pack-stock";
+import { estimateStock, fullStockAt, type PackStockState, PRO_REGEN_PERIOD_MS } from "../../features/packs/pack-stock";
 
 const timeFormatter = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
@@ -14,7 +14,9 @@ export function renderPackSection(elements: PackSectionElements, state: PackStoc
 		return;
 	}
 	const estimated = estimateStock(state, now);
+	const pace = state.periodMs === PRO_REGEN_PERIOD_MS ? "Pro : 1 paquet / 3 min" : "1 paquet / 10 min";
 	elements.stock.textContent = `${estimated} / ${state.maxStock}`;
+	elements.stock.dataset.pace = pace;
 	const fullAt = fullStockAt(state);
 	if (estimated >= state.maxStock) {
 		elements.detail.textContent = "Stock plein : la régénération est en pause tant que tu n'ouvres pas de paquet.";

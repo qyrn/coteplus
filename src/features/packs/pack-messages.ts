@@ -11,7 +11,7 @@ function isPackStockReading(value: unknown): value is PackStockReading {
 		Number.isInteger(value.stock) &&
 		Number.isInteger(value.maxStock) &&
 		(value.nextPackInMs === null || typeof value.nextPackInMs === "number") &&
-		(value.isPro === null || typeof value.isPro === "boolean")
+		typeof value.isPro === "boolean"
 	);
 }
 

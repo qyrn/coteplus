@@ -7,7 +7,7 @@ export interface PackStockReading {
 	stock: number;
 	maxStock: number;
 	nextPackInMs: number | null;
-	isPro: boolean | null;
+	isPro: boolean;
 }
 
 export interface PackStockState {
@@ -50,27 +50,16 @@ export function readPackStock(root: ParentNode): PackStockReading | null {
 	const maxStock = Number(stockMatch[2]);
 	if (!Number.isInteger(stock) || !Number.isInteger(maxStock) || maxStock <= 0) return null;
 	const nextPackInMs = readCountdownMs(text);
-	const showsProDailyPack = (root.querySelector("main")?.textContent ?? "").includes(PRO_DAILY_PACK_LABEL);
-	const countdownProvesRegular = nextPackInMs !== null && nextPackInMs > PRO_REGEN_PERIOD_MS;
 	return {
 		stock,
 		maxStock,
 		nextPackInMs,
-		isPro: showsProDailyPack ? true : countdownProvesRegular ? false : null,
+		isPro: (root.querySelector("main")?.textContent ?? "").includes(PRO_DAILY_PACK_LABEL),
 	};
 }
 
-export function stateFromReading(
-	reading: PackStockReading,
-	readAt: number,
-	previous: PackStockState | null,
-): PackStockState {
-	const periodMs =
-		reading.isPro === null
-			? (previous?.periodMs ?? REGULAR_REGEN_PERIOD_MS)
-			: reading.isPro
-				? PRO_REGEN_PERIOD_MS
-				: REGULAR_REGEN_PERIOD_MS;
+export function stateFromReading(reading: PackStockReading, readAt: number): PackStockState {
+	const periodMs = reading.isPro ? PRO_REGEN_PERIOD_MS : REGULAR_REGEN_PERIOD_MS;
 	return {
 		stock: Math.min(reading.stock, reading.maxStock),
 		maxStock: reading.maxStock,

@@ -68,7 +68,7 @@ async function handleMessage(message: PackStockMessage): Promise<void> {
 	if (message.type === "pack-stock/signed-out") {
 		await packStockItem.setValue(null);
 	} else {
-		await packStockItem.setValue(stateFromReading(message.reading, message.readAt, await readPackStockState()));
+		await packStockItem.setValue(stateFromReading(message.reading, message.readAt));
 	}
 	await refresh();
 }

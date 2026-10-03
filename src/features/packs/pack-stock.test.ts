@@ -30,14 +30,14 @@ describe("readPackStock", () => {
 		expect(readPackStock(document)?.isPro).toBe(true);
 	});
 
-	it("leaves Pro unknown when the countdown is short and no Pro block exists", () => {
+	it("treats a missing Pro block as a regular account", () => {
 		document.body.innerHTML = pullsMarkup("4", "2:10");
-		expect(readPackStock(document)?.isPro).toBeNull();
+		expect(readPackStock(document)?.isPro).toBe(false);
 	});
 
 	it("handles a full stock without countdown", () => {
 		document.body.innerHTML = pullsMarkup("10", null);
-		expect(readPackStock(document)).toEqual({ stock: 10, maxStock: 10, nextPackInMs: null, isPro: null });
+		expect(readPackStock(document)).toEqual({ stock: 10, maxStock: 10, nextPackInMs: null, isPro: false });
 	});
 
 	it("returns null outside the pulls screen", () => {
@@ -83,7 +83,7 @@ describe("stock estimation", () => {
 describe("stateFromReading", () => {
 	it("anchors the next pack on the read time", () => {
 		const reading = { stock: 4, maxStock: 10, nextPackInMs: 60_000, isPro: true };
-		expect(stateFromReading(reading, 5_000, null)).toEqual({
+		expect(stateFromReading(reading, 5_000)).toEqual({
 			stock: 4,
 			maxStock: 10,
 			nextPackAt: 65_000,
@@ -92,15 +92,8 @@ describe("stateFromReading", () => {
 		});
 	});
 
-	it("keeps the previous period when Pro is unknown", () => {
-		const previous: PackStockState = {
-			stock: 1,
-			maxStock: 10,
-			nextPackAt: null,
-			periodMs: PRO_REGEN_PERIOD_MS,
-			readAt: 0,
-		};
-		const reading = { stock: 2, maxStock: 10, nextPackInMs: 30_000, isPro: null };
-		expect(stateFromReading(reading, 1_000, previous).periodMs).toBe(PRO_REGEN_PERIOD_MS);
+	it("uses the regular period without Pro", () => {
+		const reading = { stock: 2, maxStock: 10, nextPackInMs: 30_000, isPro: false };
+		expect(stateFromReading(reading, 1_000).periodMs).toBe(REGULAR_REGEN_PERIOD_MS);
 	});
 });

@@ -205,3 +205,11 @@ p {
 	color: #fed7aa;
 	font-size: 12px;
 }
+
+.pack-stock::after {
+	content: attr(data-pace);
+	margin-left: 10px;
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--muted);
+}

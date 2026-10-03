@@ -15,8 +15,13 @@ export interface CachedValue<TValue> {
 
 export interface TtlStore<TValue> {
 	get(id: string): Promise<CachedValue<TValue> | null>;
+	getMany(ids: readonly string[]): Promise<Map<string, CachedValue<TValue>>>;
 	set(id: string, value: TValue, ttlMs: number): Promise<void>;
 	setMany(entries: ReadonlyArray<readonly [string, TValue]>, ttlMs: number): Promise<void>;
+}
+
+function isCacheEntry<TValue>(value: unknown): value is CacheEntry<TValue> {
+	return isRecord(value) && typeof value.expiresAt === "number" && typeof value.storedAt === "number";
 }
 
 export function createTtlStore<TValue>(namespace: string): TtlStore<TValue> {
@@ -36,6 +41,23 @@ export function createTtlStore<TValue>(namespace: string): TtlStore<TValue> {
 			if (!entry || entry.expiresAt <= Date.now()) return null;
 			memory.set(id, entry);
 			return { value: entry.value, storedAt: entry.storedAt };
+		},
+		async getMany(ids) {
+			const missingIds = ids.filter((id) => !memory.has(id));
+			if (missingIds.length > 0) {
+				const stored = await storage.getItems(missingIds.map(keyFor));
+				stored.forEach(({ value }, index) => {
+					const id = missingIds[index];
+					if (id !== undefined && isCacheEntry<TValue>(value)) memory.set(id, value);
+				});
+			}
+			const now = Date.now();
+			const found = new Map<string, CachedValue<TValue>>();
+			for (const id of ids) {
+				const entry = memory.get(id);
+				if (entry && entry.expiresAt > now) found.set(id, { value: entry.value, storedAt: entry.storedAt });
+			}
+			return found;
 		},
 		async set(id, value, ttlMs) {
 			await storage.setItem(keyFor(id), remember(id, value, ttlMs));

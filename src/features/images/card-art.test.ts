@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { initialsFor } from "./card-cover";
+import { initialsFor } from "./card-art";
 
 describe("initialsFor", () => {
 	it("takes the first letters of the first two words", () => {

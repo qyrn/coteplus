@@ -1,16 +1,9 @@
-import type { Rarity } from "../../lib/site/rarity";
+import type { CardView } from "../../lib/site/card-dom";
 import type { FoundImage } from "./found-image";
 
+const ART_OVERLAY_CLASS = "wmp-art-overlay";
 const COVER_CLASS = "wmp-card-cover";
 const MAX_INITIALS = 2;
-const FILLED_IMAGE_STYLE = {
-	width: "100%",
-	height: "100%",
-	padding: "0",
-	"object-fit": "cover",
-	opacity: "1",
-	filter: "none",
-};
 
 export function initialsFor(title: string): string {
 	return title
@@ -22,24 +15,39 @@ export function initialsFor(title: string): string {
 		.join("");
 }
 
-export function showCover(placeholder: HTMLImageElement, title: string, rarity: Rarity): void {
-	const container = placeholder.parentElement;
-	if (!container || container.querySelector(`.${COVER_CLASS}`)) return;
-	const cover = document.createElement("div");
-	cover.className = COVER_CLASS;
-	cover.style.setProperty("--wmp-cover-color", `var(--color-rarity-${rarity.toLowerCase()})`);
-	cover.textContent = initialsFor(title);
-	cover.setAttribute("aria-hidden", "true");
-	placeholder.style.setProperty("display", "none");
-	container.append(cover);
+function findArtArea(card: CardView, placeholder: HTMLImageElement): HTMLElement | null {
+	for (let element = placeholder.parentElement; element && element !== card.element; element = element.parentElement) {
+		if (getComputedStyle(element).position === "absolute") return element;
+	}
+	return placeholder.parentElement;
 }
 
-export function showImage(placeholder: HTMLImageElement, image: FoundImage, title: string, rarity: Rarity): void {
-	placeholder.addEventListener("error", () => showCover(placeholder, title, rarity), { once: true });
-	placeholder.removeAttribute("srcset");
-	placeholder.removeAttribute("sizes");
-	for (const [property, value] of Object.entries(FILLED_IMAGE_STYLE)) placeholder.style.setProperty(property, value);
-	placeholder.alt = title;
-	if (image.credit) placeholder.title = image.credit;
-	placeholder.src = image.url;
+function replaceArt(card: CardView, placeholder: HTMLImageElement, overlay: HTMLElement): void {
+	const artArea = findArtArea(card, placeholder);
+	if (!artArea) return;
+	artArea.querySelector(`.${ART_OVERLAY_CLASS}`)?.remove();
+	const logoWrapper = [...artArea.children].find((child) => child.contains(placeholder));
+	if (logoWrapper instanceof HTMLElement) logoWrapper.style.setProperty("display", "none");
+	overlay.classList.add(ART_OVERLAY_CLASS);
+	artArea.append(overlay);
+}
+
+export function showCover(card: CardView, placeholder: HTMLImageElement): void {
+	const cover = document.createElement("div");
+	cover.className = COVER_CLASS;
+	cover.style.setProperty("--wmp-cover-color", `var(--color-rarity-${card.rarity.toLowerCase()})`);
+	cover.textContent = initialsFor(card.title);
+	cover.setAttribute("aria-hidden", "true");
+	replaceArt(card, placeholder, cover);
+}
+
+export function showImage(card: CardView, placeholder: HTMLImageElement, image: FoundImage): void {
+	const art = document.createElement("img");
+	art.alt = card.title;
+	art.decoding = "async";
+	art.referrerPolicy = "no-referrer";
+	if (image.credit) art.title = image.credit;
+	art.addEventListener("error", () => showCover(card, placeholder), { once: true });
+	art.src = image.url;
+	replaceArt(card, placeholder, art);
 }

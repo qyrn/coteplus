@@ -19,7 +19,7 @@ import { createRequestQueue } from "../../lib/net/request-queue";
 import { createPageWatcher } from "../../lib/site/page-watcher";
 
 const WIKIMEDIA_USER_AGENT = "WikiMastersPlus/0.1 (extension navigateur)";
-const OPENVERSE_MIN_INTERVAL_MS = 3000;
+const OPENVERSE_MIN_INTERVAL_MS = 4000;
 
 export default defineContentScript({
 	matches: ["https://www.wiki-masters.com/*"],

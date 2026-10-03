@@ -3,7 +3,7 @@ import { type CardView, readCard } from "../../lib/site/card-dom";
 import type { PageWatcher } from "../../lib/site/page-watcher";
 import { handleCardsWhenVisible } from "../../lib/site/visible-cards";
 import type { CardCatalog } from "../cards/card-catalog";
-import { showCover, showImage } from "./card-cover";
+import { showCover, showImage } from "./card-art";
 import type { CardImageService } from "./card-image-service";
 
 const PLACEHOLDER_SELECTOR = 'img[alt="WikiMasters"]';
@@ -24,8 +24,8 @@ async function fillMissingImage(card: CardView, catalog: CardCatalog, imageServi
 	const image = await imageService.findImage(card.title).catch(() => null);
 	const placeholder = findPlaceholder(card);
 	if (!placeholder || readCard(card.element)?.title !== card.title) return;
-	if (image) showImage(placeholder, image, card.title, card.rarity);
-	else showCover(placeholder, card.title, card.rarity);
+	if (image) showImage(card, placeholder, image);
+	else showCover(card, placeholder);
 }
 
 export function startMissingImages(

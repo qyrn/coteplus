@@ -633,3 +633,27 @@ html.light .wmp-pull-stats-bar > span {
 	opacity: 0.45;
 	cursor: not-allowed;
 }
+
+.wmp-trade-impact {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	margin: 4px 0 0;
+	padding: 0;
+	list-style: none;
+	font-size: 11px;
+	font-weight: 600;
+	text-align: left;
+}
+
+.wmp-trade-impact [data-tone="good"] {
+	color: var(--wmp-accent-text);
+}
+
+.wmp-trade-impact [data-tone="warning"] {
+	color: var(--wmp-negative-text);
+}
+
+.wmp-trade-impact [data-tone="neutral"] {
+	color: var(--wmp-muted);
+}

@@ -1,11 +1,14 @@
 import type { PageWatcher } from "../../lib/site/page-watcher";
+import { type OwnedCard, ownedCardsItem } from "../cards/collection-index";
 import type { PriceService } from "../prices/price-service";
+import { givenImpact, type ImpactLine, ownedByTitle, receivedImpact } from "./trade-impact";
 import { readTradeSides, type TradeSide, tradeKey } from "./trade-side";
 
 const TRADE_SELECTOR = 'button[aria-label="Voir le détail de l\'échange"]';
 const HANDLED_KEY_ATTRIBUTE = "data-wmp-trade-for";
 const SIDE_VALUE_CLASS = "wmp-trade-side-value";
 const BALANCE_CLASS = "wmp-trade-balance";
+const IMPACT_CLASS = "wmp-trade-impact";
 
 const amountFormatter = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
 
@@ -49,6 +52,23 @@ function renderSideValue(side: TradeSide, value: SideValue): void {
 	if (!line.isConnected) side.container.append(line);
 }
 
+function renderImpact(side: TradeSide, owned: ReadonlyMap<string, OwnedCard>): void {
+	side.container.querySelector(`.${IMPACT_CLASS}`)?.remove();
+	const lines: ImpactLine[] = side.isMine ? givenImpact(side.cards, owned) : receivedImpact(side.cards, owned);
+	if (lines.length === 0) return;
+	const list = document.createElement("ul");
+	list.className = IMPACT_CLASS;
+	list.append(
+		...lines.map((line) => {
+			const item = document.createElement("li");
+			item.dataset.tone = line.tone;
+			item.textContent = line.text;
+			return item;
+		}),
+	);
+	side.container.append(list);
+}
+
 function renderBalance(trade: HTMLElement, text: string, balanceSign: number): void {
 	const header = trade.firstElementChild?.firstElementChild;
 	if (!header) return;
@@ -62,12 +82,17 @@ function renderBalance(trade: HTMLElement, text: string, balanceSign: number): v
 async function showTradeValues(trade: HTMLElement, sides: TradeSide[], priceService: PriceService): Promise<void> {
 	const key = tradeKey(sides);
 	trade.setAttribute(HANDLED_KEY_ATTRIBUTE, key);
-	const values = await Promise.all(sides.map((side) => estimateSideValue(side, priceService)));
+	const [values, ownedCards] = await Promise.all([
+		Promise.all(sides.map((side) => estimateSideValue(side, priceService))),
+		ownedCardsItem.getValue(),
+	]);
 	if (trade.getAttribute(HANDLED_KEY_ATTRIBUTE) !== key) return;
 	sides.forEach((side, index) => {
 		const value = values[index];
 		if (value && (side.cards.length > 0 || side.wikibidous > 0)) renderSideValue(side, value);
 	});
+	const owned = ownedByTitle(ownedCards);
+	if (owned.size > 0) for (const side of sides) renderImpact(side, owned);
 	const mineIndex = sides.findIndex((side) => side.isMine);
 	const theirsIndex = sides.findIndex((side) => !side.isMine);
 	const mine = values[mineIndex];

@@ -2,22 +2,17 @@ import { storage } from "wxt/utils/storage";
 import { isRecord } from "../../lib/json";
 import type { RequestQueue } from "../../lib/net/request-queue";
 import { normalizeTitle } from "../../lib/site/card-dom";
-import { isRarity, type Rarity } from "../../lib/site/rarity";
-import { type CardRef, readHideImage } from "./card-ref";
-
-export interface OwnedCardRef extends CardRef {
-	title: string;
-	rarity: Rarity;
-}
+import { isRarity } from "../../lib/site/rarity";
+import { readHideImage, type TitledCardRef } from "./card-ref";
 
 export interface CollectionPage {
-	cards: OwnedCardRef[];
+	cards: TitledCardRef[];
 	total: number | null;
 }
 
 export interface CollectionIndexer {
 	syncIfStale(): Promise<void>;
-	syncNow(): Promise<OwnedCardRef[]>;
+	syncNow(): Promise<TitledCardRef[]>;
 	whenIdle(): Promise<void>;
 }
 
@@ -25,7 +20,7 @@ const COLLECTION_PAGE_SIZE = 50;
 const SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const lastSyncedAt = storage.defineItem<number>("local:collection-index-synced-at", { fallback: 0 });
 
-function readOwnedCard(row: unknown): OwnedCardRef | null {
+function readOwnedCard(row: unknown): TitledCardRef | null {
 	if (!isRecord(row) || !isRecord(row.card)) return null;
 	const { id, wikipedia_title: title, rarity } = row.card;
 	if (typeof id !== "string" || typeof title !== "string" || typeof rarity !== "string" || !isRarity(rarity)) {
@@ -38,7 +33,7 @@ export function parseCollectionPage(json: unknown): CollectionPage {
 	if (!isRecord(json)) return { cards: [], total: null };
 	const rows = Array.isArray(json.collection) ? json.collection : [];
 	return {
-		cards: rows.map(readOwnedCard).filter((card): card is OwnedCardRef => card !== null),
+		cards: rows.map(readOwnedCard).filter((card): card is TitledCardRef => card !== null),
 		total: typeof json.total === "number" ? json.total : null,
 	};
 }
@@ -49,7 +44,7 @@ export function collectionPageUrl(page: number): string {
 
 export function createCollectionIndexer(
 	queue: RequestQueue,
-	saveCards: (cards: OwnedCardRef[]) => Promise<void>,
+	saveCards: (cards: TitledCardRef[]) => Promise<void>,
 ): CollectionIndexer {
 	let runningSync: Promise<unknown> | null = null;
 
@@ -59,7 +54,7 @@ export function createCollectionIndexer(
 		return collectionPage;
 	}
 
-	async function sync(): Promise<OwnedCardRef[]> {
+	async function sync(): Promise<TitledCardRef[]> {
 		const firstPage = await loadPage(0);
 		const pageCount = Math.ceil((firstPage.total ?? 0) / COLLECTION_PAGE_SIZE);
 		const remainingPages = Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) => index + 1);

@@ -2,7 +2,7 @@ import { CACHE_NAMESPACES } from "../../lib/cache/namespaces";
 import { createTtlStore } from "../../lib/cache/ttl-store";
 import type { RequestQueue } from "../../lib/net/request-queue";
 import type { Rarity } from "../../lib/site/rarity";
-import type { CardRef } from "./card-ref";
+import type { CardRef, TitledCardRef } from "./card-ref";
 import { catalogSearchUrl, findCardInSearch } from "./catalog-search";
 import { type CollectionIndexer, createCollectionIndexer } from "./collection-index";
 
@@ -17,6 +17,7 @@ interface CardLookup {
 export interface CardCatalog {
 	collectionIndexer: CollectionIndexer;
 	resolve(title: string, rarity: Rarity): Promise<CardRef | null>;
+	learnFrom(loading: Promise<TitledCardRef[]>): void;
 }
 
 function cardKey(title: string, rarity: Rarity): string {
@@ -26,19 +27,23 @@ function cardKey(title: string, rarity: Rarity): string {
 export function createCardCatalog(queue: RequestQueue): CardCatalog {
 	const lookupStore = createTtlStore<CardLookup>(CACHE_NAMESPACES.cardRefByTitle);
 	const inFlight = new Map<string, Promise<CardRef | null>>();
-	const collectionIndexer = createCollectionIndexer(queue, (cards) =>
-		lookupStore.setMany(
+	const pendingLearning = new Set<Promise<void>>();
+
+	function remember(cards: TitledCardRef[]): Promise<void> {
+		return lookupStore.setMany(
 			cards.map(
 				(card) =>
 					[cardKey(card.title, card.rarity), { card: { cardId: card.cardId, hideImage: card.hideImage } }] as const,
 			),
 			CARD_REF_TTL_MS,
-		),
-	);
+		);
+	}
+
+	const collectionIndexer = createCollectionIndexer(queue, remember);
 
 	async function lookup(title: string, rarity: Rarity): Promise<CardRef | null> {
 		const key = cardKey(title, rarity);
-		await collectionIndexer.whenIdle();
+		await Promise.all([collectionIndexer.whenIdle(), ...pendingLearning]);
 		const cached = await lookupStore.get(key);
 		if (cached) return cached.value.card;
 		const card = findCardInSearch(await queue.getJson(catalogSearchUrl(title)), title, rarity);
@@ -55,6 +60,13 @@ export function createCardCatalog(queue: RequestQueue): CardCatalog {
 			const resolving = lookup(title, rarity).finally(() => inFlight.delete(key));
 			inFlight.set(key, resolving);
 			return resolving;
+		},
+		learnFrom(loading) {
+			const learning: Promise<void> = loading
+				.then(remember)
+				.catch(() => undefined)
+				.finally(() => pendingLearning.delete(learning));
+			pendingLearning.add(learning);
 		},
 	};
 }

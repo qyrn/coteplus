@@ -3,7 +3,7 @@ import { createTtlStore } from "../../lib/cache/ttl-store";
 import type { RequestPriority, RequestQueue } from "../../lib/net/request-queue";
 import { RARITIES, type Rarity } from "../../lib/site/rarity";
 import type { CardCatalog } from "../cards/card-catalog";
-import type { OwnedCardRef } from "../cards/collection-index";
+import type { TitledCardRef } from "../cards/card-ref";
 import { type PriceSummary, parsePriceSummary, pickAveragePrice } from "./price-summary";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -36,7 +36,7 @@ function isFresh(storedAt: number): boolean {
 	return Date.now() - storedAt <= PRICE_REFRESH_AFTER_MS;
 }
 
-function uniqueCardIdsByRarityDesc(cards: OwnedCardRef[]): string[] {
+function uniqueCardIdsByRarityDesc(cards: TitledCardRef[]): string[] {
 	const sorted = [...cards].sort((left, right) => RARITIES.indexOf(right.rarity) - RARITIES.indexOf(left.rarity));
 	return [...new Set(sorted.map((card) => card.cardId))];
 }

@@ -24,7 +24,7 @@ function rowFor(ranked: RankedAuction, isBest: boolean): HTMLLIElement {
 	const deal = document.createElement("span");
 	deal.className = "wmp-chip";
 	deal.dataset.tone = ranked.deal ? DEAL_TONES[ranked.deal.level] : "neutral";
-	deal.textContent = ranked.deal ? dealText(ranked.deal) : "prix moyen inconnu";
+	deal.textContent = ranked.deal ? dealText(ranked.deal) : "cote inconnue";
 	const end = document.createElement("span");
 	end.className = "wmp-row-muted";
 	end.textContent = `fin ${timeFormatter.format(ranked.auction.endAt)}`;
@@ -72,15 +72,15 @@ export function startWishAuctionsPanel(
 			);
 			return;
 		}
-		const averages = await Promise.all(
+		const cotes = await Promise.all(
 			auctions.map((auction) =>
 				priceService
-					.getAveragePrice(auction.title, auction.rarity)
-					.then((price) => price.average)
+					.getPrice(auction.title, auction.rarity)
+					.then((price) => price.value)
 					.catch(() => null),
 			),
 		);
-		const ranked = rankAuctions(auctions, averages, settings.current().greatDealPercent);
+		const ranked = rankAuctions(auctions, cotes, settings.current().greatDealPercent);
 		const list = document.createElement("ul");
 		list.className = "wmp-rows";
 		list.append(...ranked.map((entry, index) => rowFor(entry, index === 0 && entry.deal !== null)));

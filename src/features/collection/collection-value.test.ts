@@ -8,14 +8,16 @@ function owned(cardId: string, rarity: OwnedCard["rarity"], copies: number): Own
 }
 
 describe("computeCollectionValue", () => {
-	it("adds every copy at its average price and skips unknown prices", () => {
-		const averages = new Map([
+	it("adds every copy at its cote and skips unknown prices", () => {
+		const cotes = new Map([
 			["a", 100],
 			["b", 40],
 		]);
 		const value = computeCollectionValue([owned("a", "L", 2), owned("b", "R", 1), owned("c", "C", 5)], (card) => {
-			const average = averages.get(card.cardId);
-			return average === undefined ? null : { average, salesCount: null, latestPrice: null };
+			const cote = cotes.get(card.cardId);
+			return cote === undefined
+				? null
+				: { value: cote, basis: "recent" as const, low: null, high: null, salesCount: null, latestPrice: null };
 		});
 		expect(value).toEqual({ total: 240, byRarity: { L: 200, R: 40 }, pricedCards: 2, ownedCards: 3 });
 		expect(raritiesByValue(value)).toEqual([

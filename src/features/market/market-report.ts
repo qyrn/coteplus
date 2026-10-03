@@ -13,7 +13,7 @@ export interface MarketReport {
 
 export interface AverageComparison {
 	paidOrEarned: number;
-	averageTotal: number;
+	coteTotal: number;
 	comparedCount: number;
 }
 
@@ -49,23 +49,23 @@ export function buildMarketReport(market: MyMarket): MarketReport {
 
 export function compareWithAverages(
 	auctions: AuctionSummary[],
-	averages: ReadonlyArray<number | null>,
+	cotes: ReadonlyArray<number | null>,
 ): AverageComparison {
 	return auctions.reduce<AverageComparison>(
 		(comparison, auction, index) => {
-			const average = averages[index];
-			if (average === null || average === undefined || average <= 0) return comparison;
+			const cote = cotes[index];
+			if (cote === null || cote === undefined || cote <= 0) return comparison;
 			return {
 				paidOrEarned: comparison.paidOrEarned + finalPriceOf(auction),
-				averageTotal: comparison.averageTotal + average,
+				coteTotal: comparison.coteTotal + cote,
 				comparedCount: comparison.comparedCount + 1,
 			};
 		},
-		{ paidOrEarned: 0, averageTotal: 0, comparedCount: 0 },
+		{ paidOrEarned: 0, coteTotal: 0, comparedCount: 0 },
 	);
 }
 
 export function differenceFromAverage(comparison: AverageComparison): number | null {
-	if (comparison.comparedCount === 0 || comparison.averageTotal <= 0) return null;
-	return Math.round((comparison.paidOrEarned / comparison.averageTotal - 1) * 100);
+	if (comparison.comparedCount === 0 || comparison.coteTotal <= 0) return null;
+	return Math.round((comparison.paidOrEarned / comparison.coteTotal - 1) * 100);
 }

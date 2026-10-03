@@ -28,11 +28,11 @@ function plural(count: number, singular: string, pluralForm: string): string {
 
 function comparisonText(label: string, comparison: AverageComparison, aboveIsGood: boolean): string {
 	const difference = differenceFromAverage(comparison);
-	if (difference === null) return `${label} : aucun prix moyen connu pour comparer.`;
-	if (difference === 0) return `${label} : pile dans la moyenne.`;
+	if (difference === null) return `${label} : aucune cote connue pour comparer.`;
+	if (difference === 0) return `${label} : pile dans la cote.`;
 	const direction = difference > 0 ? "au-dessus" : "en dessous";
 	const verdict = difference > 0 === aboveIsGood ? "bien joué" : "à surveiller";
-	return `${label} : ${Math.abs(difference)} % ${direction} de la moyenne (${verdict}, sur ${plural(comparison.comparedCount, "carte", "cartes")}).`;
+	return `${label} : ${Math.abs(difference)} % ${direction} de la cote (${verdict}, sur ${plural(comparison.comparedCount, "carte", "cartes")}).`;
 }
 
 function historyRow(auction: AuctionSummary, sign: 1 | -1): HTMLLIElement {
@@ -98,7 +98,7 @@ export function startMarketReportPanel(
 			auction.cardId ? [{ cardId: auction.cardId, rarity: auction.rarity }] : [],
 		);
 		const stats = await priceService.cachedPriceStats(priced);
-		return auctions.map((auction) => (auction.cardId ? (stats.get(auction.cardId)?.average ?? null) : null));
+		return auctions.map((auction) => (auction.cardId ? (stats.get(auction.cardId)?.value ?? null) : null));
 	}
 
 	async function showComparison(button: HTMLButtonElement, current: MarketReport): Promise<void> {
@@ -118,7 +118,7 @@ export function startMarketReportPanel(
 	}
 
 	function render(current: MarketReport, isCapped: boolean): void {
-		const compareButton = createButton("Comparer aux prix moyens", "soft");
+		const compareButton = createButton("Comparer à la cote", "soft");
 		compareButton.addEventListener("click", () => void showComparison(compareButton, current));
 		const unsold = current.unsoldCount > 0 ? `, ${plural(current.unsoldCount, "invendue", "invendues")}` : "";
 		const metrics = document.createElement("div");

@@ -21,7 +21,7 @@ import { startPackValueRecap } from "../../features/packs/pack-value-recap";
 import { startPullRevealTracker } from "../../features/packs/pull-reveal-tracker";
 import { startPullStatsPanel } from "../../features/packs/pull-stats-panel";
 import { createRevealWatcher } from "../../features/packs/reveal-watcher";
-import { startAveragePrices } from "../../features/prices/average-prices";
+import { startCoteBadges } from "../../features/prices/cote-badges";
 import { createPriceService } from "../../features/prices/price-service";
 import { watchLiveSettings } from "../../features/settings/live-settings";
 import { startTradeValues } from "../../features/trades/trade-values";
@@ -67,7 +67,7 @@ export default defineContentScript({
 		startCollectionAutoSync(pageWatcher, catalog);
 		startMarketCardSeed(pageWatcher, siteApi, catalog);
 		startGlobalSearchLearner(ctx, siteApi, catalog);
-		startAveragePrices(ctx, pageWatcher, priceService);
+		startCoteBadges(ctx, pageWatcher, priceService);
 		startBestSalesPanel(ctx, pageWatcher, catalog, priceService);
 		startCollectionValuePanel(ctx, pageWatcher, priceService);
 		startDiscardGuard(ctx, pageWatcher, priceService, settings);

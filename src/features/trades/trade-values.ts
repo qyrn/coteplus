@@ -30,18 +30,18 @@ export function balanceText(mine: SideValue, theirs: SideValue): string {
 }
 
 async function estimateSideValue(side: TradeSide, priceService: PriceService): Promise<SideValue> {
-	const averages = await Promise.all(
+	const cotes = await Promise.all(
 		side.cards.map((card) =>
 			priceService
-				.getAveragePrice(card.title, card.rarity)
-				.then((price) => price.average)
+				.getPrice(card.title, card.rarity)
+				.then((price) => price.value)
 				.catch(() => null),
 		),
 	);
-	const priced = averages.filter((average): average is number => average !== null);
+	const priced = cotes.filter((cote): cote is number => cote !== null);
 	return {
-		total: side.wikibidous + priced.reduce((sum, average) => sum + average, 0),
-		unpricedCards: averages.length - priced.length,
+		total: side.wikibidous + priced.reduce((sum, cote) => sum + cote, 0),
+		unpricedCards: cotes.length - priced.length,
 	};
 }
 

@@ -26,7 +26,7 @@ async function showAveragePrice(card: CardView, priceService: PriceService): Pro
 	card.element.setAttribute(RENDERED_TITLE_ATTRIBUTE, card.title);
 	renderPriceBadge(card.element, card.heading, { kind: "loading" });
 	try {
-		const price = await priceService.getAveragePrice(card.title, card.rarity, () => isStillShown(card));
+		const price = await priceService.getPrice(card.title, card.rarity, () => isStillShown(card));
 		renderIfStillShown(card, badgeStateFor(price.stats));
 		price.refreshed?.then((stats) => renderIfStillShown(card, badgeStateFor(stats))).catch(() => undefined);
 	} catch (error) {
@@ -34,11 +34,7 @@ async function showAveragePrice(card: CardView, priceService: PriceService): Pro
 	}
 }
 
-export function startAveragePrices(
-	ctx: ContentScriptContext,
-	pageWatcher: PageWatcher,
-	priceService: PriceService,
-): void {
+export function startCoteBadges(ctx: ContentScriptContext, pageWatcher: PageWatcher, priceService: PriceService): void {
 	handleCardsWhenVisible(ctx, pageWatcher, {
 		isHandled: isRenderedFor,
 		onVisible: (card) => void showAveragePrice(card, priceService),

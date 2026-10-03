@@ -48,7 +48,7 @@ function insertGuard(dialog: HTMLElement, className: string, content: HTMLElemen
 function showChecking(dialog: HTMLElement): void {
 	const text = document.createElement("p");
 	text.className = "wmp-note";
-	text.textContent = "Vérification du prix moyen…";
+	text.textContent = "Vérification de la cote…";
 	insertGuard(dialog, CHECKING_CLASS, [text]);
 	setState(dialog, "checking");
 }
@@ -91,9 +91,9 @@ async function checkDiscard(dialog: HTMLElement, priceService: PriceService, set
 	showChecking(dialog);
 	const starred = overlay.querySelector(STARRED_SELECTOR) !== null;
 	const lastCopy = dialog.textContent?.includes(LAST_COPY_TEXT) ?? false;
-	const { average } = await priceService.getAveragePrice(card.title, card.rarity).catch(() => ({ average: null }));
+	const { value: cote } = await priceService.getPrice(card.title, card.rarity).catch(() => ({ value: null }));
 	if (!dialog.isConnected) return;
-	const warnings = discardWarnings({ average, starred, lastCopy }, settings.current().discardGuardMinPrice);
+	const warnings = discardWarnings({ cote, starred, lastCopy }, settings.current().discardGuardMinPrice);
 	if (warnings.length > 0) showWarnings(dialog, warnings);
 	else clearGuard(dialog);
 }

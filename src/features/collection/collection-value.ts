@@ -32,9 +32,9 @@ export function computeCollectionValue(
 	let total = 0;
 	let pricedCards = 0;
 	for (const card of owned) {
-		const average = statsOf(card)?.average ?? 0;
-		if (average <= 0) continue;
-		const cardValue = average * card.copies;
+		const cote = statsOf(card)?.value ?? 0;
+		if (cote <= 0) continue;
+		const cardValue = cote * card.copies;
 		total += cardValue;
 		pricedCards += 1;
 		byRarity[card.rarity] = (byRarity[card.rarity] ?? 0) + cardValue;

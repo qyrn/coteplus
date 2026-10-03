@@ -1,21 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { compareToAverage, dealText, parseAmount, readAuctionAmount } from "./auction-deal";
+import { compareToCote, dealText, parseAmount, readAuctionAmount } from "./auction-deal";
 
-describe("compareToAverage", () => {
-	it("flags prices well under the average as great deals", () => {
-		expect(compareToAverage(65, 100, 20)).toEqual({ level: "great", differencePercent: -35 });
+describe("compareToCote", () => {
+	it("flags prices well under the cote as great deals", () => {
+		expect(compareToCote(65, 100, 20)).toEqual({ level: "great", differencePercent: -35 });
 	});
 
-	it("treats prices close to the average as fair", () => {
-		expect(compareToAverage(95, 100, 20)).toEqual({ level: "fair", differencePercent: -5 });
+	it("treats prices close to the cote as fair", () => {
+		expect(compareToCote(95, 100, 20)).toEqual({ level: "fair", differencePercent: -5 });
 	});
 
-	it("flags prices above the average as expensive", () => {
-		expect(compareToAverage(130, 100, 20)).toEqual({ level: "expensive", differencePercent: 30 });
+	it("flags prices above the cote as expensive", () => {
+		expect(compareToCote(130, 100, 20)).toEqual({ level: "expensive", differencePercent: 30 });
 	});
 
-	it("ignores missing averages", () => {
-		expect(compareToAverage(10, 0, 20)).toBeNull();
+	it("ignores missing cotes", () => {
+		expect(compareToCote(10, 0, 20)).toBeNull();
 	});
 });
 
@@ -41,8 +41,8 @@ describe("readAuctionAmount", () => {
 
 describe("dealText", () => {
 	it("formats the difference", () => {
-		expect(dealText({ level: "great", differencePercent: -35 })).toBe("−35 % vs moy.");
-		expect(dealText({ level: "expensive", differencePercent: 30 })).toBe("+30 % vs moy.");
-		expect(dealText({ level: "fair", differencePercent: 4 })).toBe("≈ moyenne");
+		expect(dealText({ level: "great", differencePercent: -35 })).toBe("−35 % vs cote");
+		expect(dealText({ level: "expensive", differencePercent: 30 })).toBe("+30 % vs cote");
+		expect(dealText({ level: "fair", differencePercent: 4 })).toBe("≈ cote");
 	});
 });

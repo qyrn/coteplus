@@ -14,19 +14,19 @@ const priceFormatter = new Intl.NumberFormat("fr-FR", {
 	maximumFractionDigits: 0,
 });
 
-function averageContent(amountText: string): Array<Node | string> {
+function coteContent(labelText: string, amountText: string): Array<Node | string> {
 	const label = document.createElement("span");
 	label.className = "wmp-price-badge-label";
-	label.textContent = "Moy.";
+	label.textContent = labelText;
 	return [label, icon("coin"), amountText];
 }
 
 function badgeContent(state: PriceBadgeState): Array<Node | string> {
 	switch (state.kind) {
 		case "loading":
-			return averageContent("…");
+			return coteContent("Cote", "…");
 		case "price":
-			return averageContent(priceFormatter.format(state.stats.average));
+			return coteContent(state.stats.basis === "recent" ? "Cote" : "Moy.", priceFormatter.format(state.stats.value));
 		default:
 			return [badgeText(state)];
 	}
@@ -43,15 +43,24 @@ function badgeText(state: Exclude<PriceBadgeState, { kind: "loading" | "price" }
 	}
 }
 
-const AVERAGE_TOOLTIP = "Prix moyen des ventes aux enchères pour cette rareté";
+const COTE_TOOLTIP = "Cote : prix médian des 20 dernières ventes de cette rareté, les plus récentes comptent davantage";
+const ALL_TIME_TOOLTIP = "Moyenne de toutes les ventes de cette rareté, la cote arrive bientôt";
+
+function priceDetails(stats: PriceStats): string[] {
+	const range =
+		stats.low !== null && stats.high !== null
+			? `fourchette ${priceFormatter.format(stats.low)} à ${priceFormatter.format(stats.high)} W`
+			: null;
+	const sales = stats.salesCount === null ? null : `${priceFormatter.format(stats.salesCount)} ventes`;
+	const latest = stats.latestPrice === null ? null : `dernière vente ${priceFormatter.format(stats.latestPrice)} W`;
+	return [range, sales, latest].filter((detail): detail is string => detail !== null);
+}
 
 function badgeTooltip(state: PriceBadgeState): string {
-	if (state.kind !== "price") return AVERAGE_TOOLTIP;
-	const details = [
-		state.stats.salesCount === null ? null : `${priceFormatter.format(state.stats.salesCount)} ventes`,
-		state.stats.latestPrice === null ? null : `dernière vente ${priceFormatter.format(state.stats.latestPrice)} W`,
-	].filter((detail): detail is string => detail !== null);
-	return details.length > 0 ? `${AVERAGE_TOOLTIP} (${details.join(", ")})` : AVERAGE_TOOLTIP;
+	if (state.kind !== "price") return COTE_TOOLTIP;
+	const base = state.stats.basis === "recent" ? COTE_TOOLTIP : ALL_TIME_TOOLTIP;
+	const details = priceDetails(state.stats);
+	return details.length > 0 ? `${base} (${details.join(", ")})` : base;
 }
 
 export function findPriceBadge(cardElement: HTMLElement): HTMLElement | null {

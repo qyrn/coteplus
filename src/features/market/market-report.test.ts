@@ -43,17 +43,17 @@ describe("buildMarketReport", () => {
 	});
 });
 
-describe("average comparison", () => {
-	it("compares prices with known averages only", () => {
+describe("cote comparison", () => {
+	it("compares prices with known cotes only", () => {
 		const comparison = compareWithAverages(
 			[auction({ finalPrice: 150 }), auction({ finalPrice: 50 }), auction({ finalPrice: 999 })],
 			[100, 100, null],
 		);
-		expect(comparison).toEqual({ paidOrEarned: 200, averageTotal: 200, comparedCount: 2 });
+		expect(comparison).toEqual({ paidOrEarned: 200, coteTotal: 200, comparedCount: 2 });
 		expect(differenceFromAverage(comparison)).toBe(0);
 	});
 
 	it("returns null without comparable sales", () => {
-		expect(differenceFromAverage({ paidOrEarned: 0, averageTotal: 0, comparedCount: 0 })).toBeNull();
+		expect(differenceFromAverage({ paidOrEarned: 0, coteTotal: 0, comparedCount: 0 })).toBeNull();
 	});
 });

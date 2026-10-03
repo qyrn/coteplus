@@ -4,7 +4,7 @@ import type { PageWatcher } from "../../lib/site/page-watcher";
 import { handleCardsWhenVisible } from "../../lib/site/visible-cards";
 import type { PriceService } from "../prices/price-service";
 import type { LiveSettings } from "../settings/live-settings";
-import { type AuctionDeal, compareToAverage, dealText, readAuctionAmount } from "./auction-deal";
+import { type AuctionDeal, compareToCote, dealText, readAuctionAmount } from "./auction-deal";
 import { AUCTION_TILE_SELECTOR, tileActions } from "./auction-tile-actions";
 
 const DEAL_CHIP_CLASS = "wmp-deal-chip";
@@ -46,12 +46,12 @@ async function showDeal(card: CardView, priceService: PriceService, settings: Li
 	const auction = readAuctionTile(card);
 	if (!auction) return;
 	auction.tile.setAttribute(HANDLED_KEY_ATTRIBUTE, auction.key);
-	const { average } = await priceService
-		.getAveragePrice(card.title, card.rarity, () => isStillShown(card))
-		.catch(() => ({ average: null }));
+	const { value: cote } = await priceService
+		.getPrice(card.title, card.rarity, () => isStillShown(card))
+		.catch(() => ({ value: null }));
 	const current = readAuctionTile(card);
 	if (current?.key !== auction.key) return;
-	const deal = average === null ? null : compareToAverage(auction.amount, average, settings.current().greatDealPercent);
+	const deal = cote === null ? null : compareToCote(auction.amount, cote, settings.current().greatDealPercent);
 	renderDeal(current, deal);
 }
 

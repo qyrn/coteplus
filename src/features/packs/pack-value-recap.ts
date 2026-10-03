@@ -55,15 +55,15 @@ export function startPackValueRecap(revealWatcher: RevealWatcher, priceService: 
 		place(event.position);
 		update({ ...value, revealedCards: value.revealedCards + 1, packSize: event.position.total });
 		priceService
-			.getAveragePrice(event.card.title, event.card.rarity)
-			.then(({ average }) => average)
+			.getPrice(event.card.title, event.card.rarity)
+			.then(({ value }) => value)
 			.catch(() => null)
-			.then((average) => {
+			.then((cote) => {
 				if (eventSession !== session) return;
 				update(
-					average === null
+					cote === null
 						? { ...value, unsoldCards: value.unsoldCards + 1 }
-						: { ...value, total: value.total + average, pricedCards: value.pricedCards + 1 },
+						: { ...value, total: value.total + cote, pricedCards: value.pricedCards + 1 },
 				);
 			});
 	});

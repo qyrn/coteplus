@@ -26,7 +26,7 @@ function rowFor(sale: BestSale): HTMLLIElement {
 	const title = document.createElement("span");
 	title.className = "wmp-row-title";
 	title.textContent = sale.card.title;
-	const price = amountElement(formatAmount(sale.average), "≈ ");
+	const price = amountElement(formatAmount(sale.cote), "≈ ");
 	if (sale.salesCount !== null) price.title = `${formatAmount(sale.salesCount)} ventes enregistrées`;
 	const copies = document.createElement("span");
 	copies.className = "wmp-chip wmp-best-sales-copies";

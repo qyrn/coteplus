@@ -1,6 +1,7 @@
 export const CACHE_NAMESPACES = {
 	cardRefByTitle: "card-ref",
-	priceSummary: "price-summary",
+	priceCote: "price-cote",
+	legacyPriceSummary: "price-summary",
 	cardImage: "card-image-v2",
 } as const;
 

@@ -88,7 +88,7 @@ export function startCollectionValuePanel(
 			...chart,
 			rarityLine(value),
 			note(
-				`Prix moyens connus pour ${value.pricedCards} cartes sur ${value.ownedCards}. La valeur grimpe aussi quand de nouveaux prix s'ajoutent en parcourant le site.`,
+				`Cote connue pour ${value.pricedCards} cartes sur ${value.ownedCards}. La valeur grimpe aussi quand de nouveaux prix s'ajoutent en parcourant le site.`,
 			),
 		);
 	}

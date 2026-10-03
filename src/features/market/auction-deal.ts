@@ -8,9 +8,9 @@ export interface AuctionDeal {
 const ACTIVE_PRICE_LABELS = new Set(["Mise actuelle", "Mise de départ"]);
 const EXPENSIVE_THRESHOLD = 10;
 
-export function compareToAverage(price: number, average: number, greatDealPercent: number): AuctionDeal | null {
-	if (average <= 0 || price < 0) return null;
-	const differencePercent = Math.round(((price - average) / average) * 100);
+export function compareToCote(price: number, cote: number, greatDealPercent: number): AuctionDeal | null {
+	if (cote <= 0 || price < 0) return null;
+	const differencePercent = Math.round(((price - cote) / cote) * 100);
 	const level: DealLevel =
 		differencePercent <= -greatDealPercent ? "great" : differencePercent >= EXPENSIVE_THRESHOLD ? "expensive" : "fair";
 	return { level, differencePercent };
@@ -31,7 +31,7 @@ export function readAuctionAmount(tile: ParentNode): number | null {
 }
 
 export function dealText(deal: AuctionDeal): string {
-	if (deal.level === "fair") return "≈ moyenne";
+	if (deal.level === "fair") return "≈ cote";
 	const sign = deal.differencePercent > 0 ? "+" : "−";
-	return `${sign}${Math.abs(deal.differencePercent)} % vs moy.`;
+	return `${sign}${Math.abs(deal.differencePercent)} % vs cote`;
 }

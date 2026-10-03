@@ -6,10 +6,12 @@ function owned(cardId: string, copies: number, starredCopies = 0): OwnedCard {
 	return { cardId, title: cardId, rarity: "R", hideImage: false, copies, starredCopies };
 }
 
-const averages: Record<string, number | null> = { cheap: 5, rich: 900, double: 300, starred: 2000, unknown: null };
+const cotes: Record<string, number | null> = { cheap: 5, rich: 900, double: 300, starred: 2000, unknown: null };
 const statsOf = (card: OwnedCard) => {
-	const average = averages[card.cardId];
-	return average === null || average === undefined ? null : { average, salesCount: 12, latestPrice: null };
+	const cote = cotes[card.cardId];
+	return cote === null || cote === undefined
+		? null
+		: { value: cote, basis: "recent" as const, low: null, high: null, salesCount: 12, latestPrice: null };
 };
 const collection = [
 	owned("cheap", 1),
@@ -20,7 +22,7 @@ const collection = [
 ];
 
 describe("rankBestSales", () => {
-	it("ranks sellable cards by average price", () => {
+	it("ranks sellable cards by cote", () => {
 		const view = rankBestSales(collection, statsOf, { duplicatesOnly: false, limit: 10 });
 		expect(view.entries.map((sale) => sale.card.cardId)).toEqual(["rich", "double", "cheap"]);
 		expect(view.pricedCards).toBe(4);

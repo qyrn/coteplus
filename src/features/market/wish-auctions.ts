@@ -1,12 +1,12 @@
 import { isRecord } from "../../lib/json";
 import type { RequestQueue } from "../../lib/net/request-queue";
-import { type AuctionDeal, compareToAverage } from "./auction-deal";
+import { type AuctionDeal, compareToCote } from "./auction-deal";
 import { type AuctionSummary, readAuctionSummary } from "./my-market";
 
 export interface RankedAuction {
 	auction: AuctionSummary;
 	price: number;
-	average: number | null;
+	cote: number | null;
 	deal: AuctionDeal | null;
 }
 
@@ -33,18 +33,18 @@ export function priceToPay(auction: AuctionSummary): number {
 
 export function rankAuctions(
 	auctions: AuctionSummary[],
-	averages: ReadonlyArray<number | null>,
+	cotes: ReadonlyArray<number | null>,
 	greatDealPercent: number,
 ): RankedAuction[] {
 	return auctions
 		.map((auction, index) => {
-			const average = averages[index] ?? null;
+			const cote = cotes[index] ?? null;
 			const price = priceToPay(auction);
 			return {
 				auction,
 				price,
-				average,
-				deal: average === null ? null : compareToAverage(price, average, greatDealPercent),
+				cote,
+				deal: cote === null ? null : compareToCote(price, cote, greatDealPercent),
 			};
 		})
 		.sort((left, right) => {

@@ -572,9 +572,9 @@ h1 + .wmp-follow-button {
 }
 
 .wmp-friend-note {
-	flex: 1;
+	flex: 0 1 auto;
 	min-width: 0;
-	margin: 0;
+	margin: 0 auto 0 0;
 	overflow: hidden;
 	color: var(--wmp-muted);
 	font-size: 12px;
@@ -742,8 +742,6 @@ h1 + .wmp-follow-button {
 
 .wmp-best-sales-copies {
 	justify-self: end;
-	min-width: 92px;
-	justify-content: flex-end;
 }
 
 .wmp-switch {
@@ -1014,8 +1012,9 @@ html.light .wmp-pull-bar > span {
 	font-size: 12px;
 }
 
-[data-wmp-discard-guard] button[aria-disabled="true"] {
-	opacity: 0.4;
+[data-wmp-guard] button[aria-disabled="true"] {
+	opacity: 0.35;
+	filter: grayscale(1);
 	cursor: not-allowed;
 }
 

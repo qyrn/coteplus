@@ -6,8 +6,11 @@ import { startGlobalSearchLearner } from "../../features/cards/global-search-lea
 import { startBestSalesPanel } from "../../features/collection/best-sales-panel";
 import { startCollectionValuePanel } from "../../features/collection/collection-value-panel";
 import { startDiscardGuard } from "../../features/collection/discard-guard-dialog";
+import { startActionGuard } from "../../features/guards/action-guard";
 import { createCardImageService } from "../../features/images/card-image-service";
 import { startMissingImages } from "../../features/images/missing-images";
+import { startLockButtons } from "../../features/locks/lock-buttons";
+import { startLockGuards } from "../../features/locks/lock-guards";
 import { startMarketCardSeed } from "../../features/market/market-card-seed";
 import { startMarketDeals } from "../../features/market/market-deals";
 import { startMarketFollow } from "../../features/market/market-follow";
@@ -71,7 +74,10 @@ export default defineContentScript({
 		startCoteBadges(ctx, pageWatcher, priceService);
 		startBestSalesPanel(ctx, pageWatcher, catalog, priceService);
 		startCollectionValuePanel(ctx, pageWatcher, priceService);
-		startDiscardGuard(ctx, pageWatcher, priceService, settings);
+		startActionGuard(ctx);
+		startDiscardGuard(pageWatcher, priceService, settings);
+		startLockButtons(ctx, pageWatcher);
+		startLockGuards(ctx, pageWatcher);
 		startMarketDeals(ctx, pageWatcher, priceService, settings);
 		const marketFollow = startMarketFollow(ctx, pageWatcher, siteApi);
 		startStandingWatch(ctx, siteApi);

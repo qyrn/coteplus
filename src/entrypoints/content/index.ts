@@ -11,6 +11,7 @@ import { createCardImageService } from "../../features/images/card-image-service
 import { startMissingImages } from "../../features/images/missing-images";
 import { startLockButtons } from "../../features/locks/lock-buttons";
 import { startLockGuards } from "../../features/locks/lock-guards";
+import { startHideOwnedFilter } from "../../features/market/hide-owned-filter";
 import { startMarketCardSeed } from "../../features/market/market-card-seed";
 import { startMarketDeals } from "../../features/market/market-deals";
 import { startMarketFollow } from "../../features/market/market-follow";
@@ -83,6 +84,7 @@ export default defineContentScript({
 		startStandingWatch(ctx, siteApi);
 		startNotificationWatcher(pageWatcher, siteApi);
 		startMarketReportPanel(pageWatcher, marketFollow, priceService);
+		startHideOwnedFilter(ctx, pageWatcher, catalog);
 		startWishlistRedirect(ctx, pageWatcher, settings);
 		startPlayerProfileLinks(ctx, pageWatcher);
 		startWishAuctionsPanel(pageWatcher, siteApi, priceService, settings);

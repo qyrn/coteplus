@@ -4,6 +4,7 @@ import { createCardCatalog } from "../../features/cards/card-catalog";
 import { startCollectionAutoSync } from "../../features/cards/collection-auto-sync";
 import { createCardImageService } from "../../features/images/card-image-service";
 import { startMissingImages } from "../../features/images/missing-images";
+import { startMarketCardSeed } from "../../features/market/market-card-seed";
 import { startMarketDeals } from "../../features/market/market-deals";
 import { startMarketFollow } from "../../features/market/market-follow";
 import { startMarketReportPanel } from "../../features/market/market-report-panel";
@@ -54,6 +55,7 @@ export default defineContentScript({
 		const priceService = createPriceService(siteApi, catalog);
 		const imageService = createCardImageService({ wikimediaApi, openverseApi });
 		startCollectionAutoSync(pageWatcher, catalog);
+		startMarketCardSeed(pageWatcher, siteApi, catalog);
 		startAveragePrices(ctx, pageWatcher, priceService);
 		startBulkPriceToolbar(pageWatcher, priceService);
 		startMarketDeals(ctx, pageWatcher, priceService);

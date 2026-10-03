@@ -91,6 +91,10 @@ export function startPullStatsPanel(ctx: ContentScriptContext, pageWatcher: Page
 	pageWatcher.subscribe(() => {
 		if (location.pathname !== "/pulls") return;
 		const stockArea = findStockBlock(document)?.parentElement;
-		if (stockArea && panel.previousElementSibling !== stockArea) stockArea.insertAdjacentElement("afterend", panel);
+		if (!stockArea) {
+			panel.remove();
+			return;
+		}
+		if (panel.previousElementSibling !== stockArea) stockArea.insertAdjacentElement("afterend", panel);
 	});
 }

@@ -5,9 +5,9 @@ describe("findTileSellerName", () => {
 	it("finds the text node holding the seller name", () => {
 		const tile = document.createElement("div");
 		const line = document.createElement("p");
-		line.append(document.createTextNode("Vendu par "), document.createTextNode("bigbig1312"));
+		line.append(document.createTextNode("Vendu par "), document.createTextNode("vendeur42"));
 		tile.append(line);
-		expect(findTileSellerName(tile)?.data).toBe("bigbig1312");
+		expect(findTileSellerName(tile)?.data).toBe("vendeur42");
 	});
 
 	it("returns null without a seller line", () => {
@@ -18,6 +18,6 @@ describe("findTileSellerName", () => {
 
 describe("profilePath", () => {
 	it("encodes the username", () => {
-		expect(profilePath("L-théanine")).toBe("/profile/L-th%C3%A9anine");
+		expect(profilePath("Élodie-Marie")).toBe("/profile/%C3%89lodie-Marie");
 	});
 });

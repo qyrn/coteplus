@@ -1,3 +1,4 @@
+import { siteApiPausedUntilItem } from "../../lib/net/site-api-guard";
 import type { PageWatcher } from "../../lib/site/page-watcher";
 import { amountElement, signedAmountText } from "../../lib/ui/amount";
 import { createButton, setButtonContent } from "../../lib/ui/button";
@@ -140,10 +141,25 @@ export function startMarketReportPanel(
 
 	async function refresh(): Promise<void> {
 		const market = await marketFollow.latestMarket();
-		if (!market) return;
+		if (!market) {
+			const isPaused = Date.now() < (await siteApiPausedUntilItem.getValue());
+			meta.replaceChildren();
+			body.replaceChildren(
+				note(
+					isPaused
+						? "Bilan indisponible : Cote+ a mis ses requêtes en pause après un blocage du site. Réessaie dans un moment."
+						: "Impossible de charger ton historique pour le moment. Rouvre ce panneau pour réessayer.",
+				),
+			);
+			return;
+		}
 		const isCapped = market.won.length >= API_LIST_LIMIT || market.history.length >= API_LIST_LIMIT;
 		render(buildMarketReport(market), isCapped);
 	}
+
+	panel.addEventListener("toggle", () => {
+		if (panel.open) void refresh();
+	});
 
 	pageWatcher.subscribe(() => {
 		if (location.pathname !== "/marketplace") return;

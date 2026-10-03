@@ -50,7 +50,7 @@ function renderSideValue(side: TradeSide, value: SideValue): void {
 }
 
 function renderBalance(trade: HTMLElement, text: string, balanceSign: number): void {
-	const header = trade.firstElementChild;
+	const header = trade.firstElementChild?.firstElementChild;
 	if (!header) return;
 	const chip = header.querySelector<HTMLElement>(`.${BALANCE_CLASS}`) ?? document.createElement("span");
 	chip.className = BALANCE_CLASS;
@@ -66,7 +66,7 @@ async function showTradeValues(trade: HTMLElement, sides: TradeSide[], priceServ
 	if (trade.getAttribute(HANDLED_KEY_ATTRIBUTE) !== key) return;
 	sides.forEach((side, index) => {
 		const value = values[index];
-		if (value) renderSideValue(side, value);
+		if (value && (side.cards.length > 0 || side.wikibidous > 0)) renderSideValue(side, value);
 	});
 	const mineIndex = sides.findIndex((side) => side.isMine);
 	const theirsIndex = sides.findIndex((side) => !side.isMine);

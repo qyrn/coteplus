@@ -58,11 +58,17 @@
 	color: #a3aca7;
 }
 
+.wmp-art-overlay {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
 .wmp-card-cover {
 	display: grid;
 	place-items: center;
-	width: 100%;
-	height: 100%;
 	font-size: 44px;
 	font-weight: 700;
 	letter-spacing: 0.04em;
@@ -163,8 +169,9 @@
 }
 
 .wmp-deal-chip {
-	display: inline-block;
-	margin-left: 6px;
+	display: block;
+	width: fit-content;
+	margin-top: 6px;
 	padding: 0 5px;
 	border-radius: 4px;
 	font-size: 11px;

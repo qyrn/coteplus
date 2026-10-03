@@ -14,8 +14,14 @@ export interface AveragePrice {
 	refreshed: Promise<number | null> | null;
 }
 
+export interface PricedCardKey {
+	cardId: string;
+	rarity: Rarity;
+}
+
 export interface PriceService {
 	getAveragePrice(title: string, rarity: Rarity): Promise<AveragePrice>;
+	cachedAverages(cards: readonly PricedCardKey[]): Promise<Map<string, number>>;
 }
 
 function isFresh(storedAt: number): boolean {
@@ -40,6 +46,16 @@ export function createPriceService(queue: RequestQueue, catalog: CardCatalog): P
 	}
 
 	return {
+		async cachedAverages(cards) {
+			const summaries = await summaryStore.getMany(cards.map((card) => card.cardId));
+			const averages = new Map<string, number>();
+			for (const card of cards) {
+				const summary = summaries.get(card.cardId);
+				const average = summary ? pickAveragePrice(summary.value, card.rarity) : null;
+				if (average !== null) averages.set(card.cardId, average);
+			}
+			return averages;
+		},
 		async getAveragePrice(title, rarity) {
 			const cardId = (await catalog.resolve(title, rarity))?.cardId;
 			if (!cardId) return { average: null, refreshed: null };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { catalogSearchUrl, findCardInSearch } from "./catalog-search";
+import { catalogSearchUrl, findCardInSearch, readSearchCards } from "./catalog-search";
 
 const searchResponse = {
 	cards: [
@@ -33,5 +33,17 @@ describe("findCardInSearch", () => {
 describe("catalogSearchUrl", () => {
 	it("encodes the title", () => {
 		expect(catalogSearchUrl("Cléopâtre VII")).toBe("/api/cards?page=0&q=Cl%C3%A9op%C3%A2tre+VII&sort=rarity");
+	});
+});
+
+describe("readSearchCards", () => {
+	it("keeps every card with a known rarity", () => {
+		expect(
+			readSearchCards({ cards: [...searchResponse.cards, { id: "x", wikipedia_title: "Bug", rarity: "Z" }] }),
+		).toEqual([
+			{ cardId: "a", hideImage: false, title: "Iris Mittenaere", rarity: "L" },
+			{ cardId: "b", hideImage: false, title: "Miss Univers 2016", rarity: "R" },
+			{ cardId: "c", hideImage: true, title: "Miss Univers 2016", rarity: "SR" },
+		]);
 	});
 });

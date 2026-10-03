@@ -2,6 +2,7 @@ import "./style.css";
 import { defineContentScript } from "wxt/utils/define-content-script";
 import { createCardCatalog } from "../../features/cards/card-catalog";
 import { startCollectionAutoSync } from "../../features/cards/collection-auto-sync";
+import { startGlobalSearchLearner } from "../../features/cards/global-search-learner";
 import { startBestSalesPanel } from "../../features/collection/best-sales-panel";
 import { startCollectionValuePanel } from "../../features/collection/collection-value-panel";
 import { startDiscardGuard } from "../../features/collection/discard-guard-dialog";
@@ -64,6 +65,7 @@ export default defineContentScript({
 		const imageService = createCardImageService({ wikimediaApi, openverseApi });
 		startCollectionAutoSync(pageWatcher, catalog);
 		startMarketCardSeed(pageWatcher, siteApi, catalog);
+		startGlobalSearchLearner(ctx, siteApi, catalog);
 		startAveragePrices(ctx, pageWatcher, priceService);
 		startBestSalesPanel(ctx, pageWatcher, catalog, priceService);
 		startCollectionValuePanel(ctx, pageWatcher, priceService);

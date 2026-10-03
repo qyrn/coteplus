@@ -1,7 +1,7 @@
 import { isRecord } from "../../lib/json";
 import { normalizeTitle } from "../../lib/site/card-dom";
-import type { Rarity } from "../../lib/site/rarity";
-import { type CardRef, readHideImage } from "./card-ref";
+import { isRarity, type Rarity } from "../../lib/site/rarity";
+import { type CardRef, readHideImage, type TitledCardRef } from "./card-ref";
 
 interface CatalogCard extends CardRef {
 	title: string;
@@ -16,11 +16,19 @@ function readCatalogCard(entry: unknown): CatalogCard | null {
 	return { cardId: id, hideImage: readHideImage(card), title: normalizeTitle(title), rarity };
 }
 
-export function findCardInSearch(json: unknown, title: string, rarity: Rarity): CardRef | null {
+function readCatalogCards(json: unknown): CatalogCard[] {
 	const entries = isRecord(json) && Array.isArray(json.cards) ? json.cards : [];
-	const matches = entries
-		.map(readCatalogCard)
-		.filter((card): card is CatalogCard => card !== null && card.title === title);
+	return entries.map(readCatalogCard).filter((card): card is CatalogCard => card !== null);
+}
+
+export function readSearchCards(json: unknown): TitledCardRef[] {
+	return readCatalogCards(json).flatMap(({ cardId, hideImage, title, rarity }) =>
+		isRarity(rarity) ? [{ cardId, hideImage, title, rarity }] : [],
+	);
+}
+
+export function findCardInSearch(json: unknown, title: string, rarity: Rarity): CardRef | null {
+	const matches = readCatalogCards(json).filter((card) => card.title === title);
 	const match = matches.find((card) => card.rarity === rarity) ?? matches[0];
 	return match ? { cardId: match.cardId, hideImage: match.hideImage } : null;
 }

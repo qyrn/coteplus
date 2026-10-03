@@ -17,6 +17,16 @@ Exclu pour de bon :
 - appeler Supabase directement ;
 - injecter un lien sponsorisé.
 
+## Limite anti-automatisation du site
+
+Constaté le 3 octobre 2026 : après environ 1 300 requêtes de prix en quelques minutes (bouton "Charger tous les prix", retiré depuis), le site répond 403 avec le message "Trop de requêtes automatisées. L'automatisation n'est pas autorisée" et un code qui commence par `automation`.
+
+Règles qui en découlent :
+- aucun chargement en masse, quel que soit le bouton ou le réglage ;
+- au plus 2 requêtes en parallèle, 400 ms entre deux requêtes ;
+- au premier 403 `automation`, toutes les requêtes vers le site sont suspendues une heure, dans tous les onglets ;
+- les fonctions qui portent sur toute la collection (meilleures ventes, valeur totale) n'utilisent que les prix déjà en cache, obtenus en naviguant normalement.
+
 ## Stack
 
 - WXT 0.21, Manifest V3, Chrome et Firefox
@@ -83,7 +93,7 @@ Le DOM ne contient aucun id de carte. Le lien entre une carte affichée et ses d
 - Filtre "Non possédées" sur `/global-collection`
 - Valeur de la collection dans le temps : total et détail par rareté enregistrés à chaque synchro, courbe dans le popup
 - Garde-fou avant défausse : avertissement si la carte est le dernier exemplaire, en favori, ou vaut nettement plus aux enchères que le wikibidou rendu. Le joueur confirme ou annule lui-même
-- "Meilleures ventes" : cartes de la collection classées par prix moyen, avec le nombre de ventes récentes (liquidité), le nombre d'exemplaires et un repère "doublon" pour vendre sans perdre la carte. Aucun bouton de mise en vente : le joueur vend depuis le site
+- "Meilleures ventes" : cartes de la collection classées par prix moyen déjà en cache (aucun chargement en masse), avec le nombre de ventes récentes (liquidité), le nombre d'exemplaires et un repère "doublon" pour vendre sans perdre la carte. Aucun bouton de mise en vente : le joueur vend depuis le site
 
 ### Lot 5 : échanges
 

@@ -11,18 +11,13 @@ export interface AuctionPrice {
 }
 
 const ACTIVE_PRICE_LABELS = new Set(["Mise actuelle", "Mise de départ"]);
-const GREAT_DEAL_THRESHOLD = -20;
 const EXPENSIVE_THRESHOLD = 10;
 
-export function compareToAverage(price: number, average: number): AuctionDeal | null {
+export function compareToAverage(price: number, average: number, greatDealPercent: number): AuctionDeal | null {
 	if (average <= 0 || price < 0) return null;
 	const differencePercent = Math.round(((price - average) / average) * 100);
 	const level: DealLevel =
-		differencePercent <= GREAT_DEAL_THRESHOLD
-			? "great"
-			: differencePercent >= EXPENSIVE_THRESHOLD
-				? "expensive"
-				: "fair";
+		differencePercent <= -greatDealPercent ? "great" : differencePercent >= EXPENSIVE_THRESHOLD ? "expensive" : "fair";
 	return { level, differencePercent };
 }
 

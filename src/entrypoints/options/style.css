@@ -1,0 +1,120 @@
+@import "../../styles/theme.css";
+
+body {
+	margin: 0;
+	padding: 32px 16px;
+	background: var(--background);
+	color: var(--foreground);
+	font:
+		14px / 1.5 system-ui,
+		-apple-system,
+		"Segoe UI",
+		sans-serif;
+}
+
+.settings {
+	max-width: 560px;
+	margin: 0 auto;
+}
+
+.settings-header {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	margin-bottom: 16px;
+}
+
+.settings-header h1 {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 700;
+}
+
+.save-status {
+	margin: 0;
+	color: var(--accent);
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.settings-group {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin: 0 0 14px;
+	padding: 12px 14px 14px;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	background: var(--surface);
+}
+
+.settings-group legend {
+	padding: 0 6px;
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.toggle-row {
+	display: grid;
+	grid-template-columns: 18px 1fr;
+	align-items: start;
+	gap: 10px;
+	cursor: pointer;
+}
+
+.toggle-row input {
+	margin: 3px 0 0;
+	accent-color: var(--accent);
+}
+
+.number-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 4px 8px;
+}
+
+.number-field {
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.hint {
+	flex-basis: 100%;
+	color: var(--muted);
+	font-size: 12px;
+}
+
+input[type="number"],
+input[type="time"] {
+	padding: 3px 6px;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	background: var(--background);
+	color: var(--foreground);
+	font: inherit;
+	font-variant-numeric: tabular-nums;
+}
+
+input[type="number"] {
+	width: 84px;
+	margin: 0 2px;
+}
+
+input:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 1px;
+}
+
+input:disabled {
+	opacity: 0.45;
+}
+
+.time-row {
+	display: flex;
+	gap: 16px;
+	padding-left: 28px;
+}

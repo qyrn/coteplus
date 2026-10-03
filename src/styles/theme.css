@@ -1,0 +1,19 @@
+:root {
+	color-scheme: dark;
+	--background: #0c0d0c;
+	--surface: #141615;
+	--border: #2e3431;
+	--foreground: #ecfdf5;
+	--muted: #a3aca7;
+	--accent: #34d399;
+	--rarity-c: #b8f2d5;
+	--rarity-pc: #b1cff2;
+	--rarity-r: #c6a7f2;
+	--rarity-sr: #ed6fa3;
+	--rarity-ur: #fa9931;
+	--rarity-l: #ffe144;
+}
+
+* {
+	box-sizing: border-box;
+}

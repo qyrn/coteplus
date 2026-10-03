@@ -61,7 +61,7 @@ describe("priceToPay", () => {
 
 describe("rankAuctions", () => {
 	it("puts the best deal first and unknown averages last", () => {
-		const ranked = rankAuctions([summary(90, 1), summary(30, 1), summary(10, 1)], [100, 100, null]);
+		const ranked = rankAuctions([summary(90, 1), summary(30, 1), summary(10, 1)], [100, 100, null], 20);
 		expect(ranked.map((entry) => entry.price)).toEqual([30, 90, 10]);
 		expect(ranked[0]?.deal?.level).toBe("great");
 	});

@@ -3,19 +3,19 @@ import { compareToAverage, dealText, parseAmount, readAuctionPrice } from "./auc
 
 describe("compareToAverage", () => {
 	it("flags prices well under the average as great deals", () => {
-		expect(compareToAverage(65, 100)).toEqual({ level: "great", differencePercent: -35 });
+		expect(compareToAverage(65, 100, 20)).toEqual({ level: "great", differencePercent: -35 });
 	});
 
 	it("treats prices close to the average as fair", () => {
-		expect(compareToAverage(95, 100)).toEqual({ level: "fair", differencePercent: -5 });
+		expect(compareToAverage(95, 100, 20)).toEqual({ level: "fair", differencePercent: -5 });
 	});
 
 	it("flags prices above the average as expensive", () => {
-		expect(compareToAverage(130, 100)).toEqual({ level: "expensive", differencePercent: 30 });
+		expect(compareToAverage(130, 100, 20)).toEqual({ level: "expensive", differencePercent: 30 });
 	});
 
 	it("ignores missing averages", () => {
-		expect(compareToAverage(10, 0)).toBeNull();
+		expect(compareToAverage(10, 0, 20)).toBeNull();
 	});
 });
 

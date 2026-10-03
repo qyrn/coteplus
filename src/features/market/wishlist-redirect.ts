@@ -1,6 +1,7 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
 import { type CardView, findCards } from "../../lib/site/card-dom";
 import type { PageWatcher } from "../../lib/site/page-watcher";
+import type { LiveSettings } from "../settings/live-settings";
 import { saveWishTarget } from "./wish-target";
 
 const ADD_LABEL = "Ajouter à la liste de souhaits";
@@ -21,7 +22,11 @@ function findCardAround(button: HTMLElement): CardView | null {
 	return null;
 }
 
-export function startWishlistRedirect(ctx: ContentScriptContext, pageWatcher: PageWatcher): void {
+export function startWishlistRedirect(
+	ctx: ContentScriptContext,
+	pageWatcher: PageWatcher,
+	settings: LiveSettings,
+): void {
 	let pending: PendingWish | null = null;
 
 	ctx.addEventListener(
@@ -29,7 +34,7 @@ export function startWishlistRedirect(ctx: ContentScriptContext, pageWatcher: Pa
 		"click",
 		(event) => {
 			const button = event.target instanceof Element ? event.target.closest("button") : null;
-			if (!button?.textContent?.includes(ADD_LABEL)) return;
+			if (!settings.current().wishlistRedirect || !button?.textContent?.includes(ADD_LABEL)) return;
 			const card = findCardAround(button);
 			pending = card ? { button, card, startedAt: Date.now() } : null;
 		},

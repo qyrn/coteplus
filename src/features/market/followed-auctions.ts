@@ -16,7 +16,6 @@ export interface FollowedAuction {
 
 export type FollowedAuctions = Record<string, FollowedAuction>;
 
-export const REMINDER_LEAD_MS = 5 * 60 * 1000;
 const ENDED_RETENTION_MS = 24 * 60 * 60 * 1000;
 
 export const followedAuctionsItem = storage.defineItem<FollowedAuctions>("local:followed-auctions", { fallback: {} });
@@ -92,17 +91,19 @@ export function dropLongEnded(followed: FollowedAuctions, now: number): Followed
 	);
 }
 
-export function reminderAt(auction: FollowedAuction): number {
-	return auction.endAt - REMINDER_LEAD_MS;
+function reminderAt(auction: FollowedAuction, leadMs: number): number {
+	return auction.endAt - leadMs;
 }
 
-export function dueReminders(auctions: FollowedAuction[], now: number): FollowedAuction[] {
-	return auctions.filter((auction) => auction.remindedAt === null && reminderAt(auction) <= now && auction.endAt > now);
+export function dueReminders(auctions: FollowedAuction[], now: number, leadMs: number): FollowedAuction[] {
+	return auctions.filter(
+		(auction) => auction.remindedAt === null && reminderAt(auction, leadMs) <= now && auction.endAt > now,
+	);
 }
 
-export function nextReminderAt(auctions: FollowedAuction[], now: number): number | null {
+export function nextReminderAt(auctions: FollowedAuction[], now: number, leadMs: number): number | null {
 	const upcoming = auctions
 		.filter((auction) => auction.remindedAt === null && auction.endAt > now)
-		.map((auction) => Math.max(reminderAt(auction), now));
+		.map((auction) => Math.max(reminderAt(auction, leadMs), now));
 	return upcoming.length > 0 ? Math.min(...upcoming) : null;
 }

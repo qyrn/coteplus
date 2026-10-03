@@ -1,6 +1,7 @@
 import { browser } from "wxt/browser";
 import { storage } from "wxt/utils/storage";
 import { openSitePage } from "../../lib/browser/open-site-page";
+import { isQuietTime, loadSettings } from "../settings/settings";
 import { isPackStockMessage, type PackStockMessage } from "./pack-messages";
 import { estimateStock, fullStockAt, nextStockChangeAt, type PackStockState, stateFromReading } from "./pack-stock";
 import { packStockItem, readPackStockState } from "./pack-stock-store";
@@ -56,6 +57,8 @@ async function notifyIfFull(): Promise<void> {
 	const now = Date.now();
 	if (!state || fullAt === null || now < fullAt || (await notifiedFullAtItem.getValue()) === fullAt) return;
 	await notifiedFullAtItem.setValue(fullAt);
+	const settings = await loadSettings();
+	if (!settings.packFullNotification || isQuietTime(settings.quietHours, new Date(now))) return;
 	await browser.notifications.create(FULL_NOTIFICATION_ID, {
 		type: "basic",
 		iconUrl: browser.runtime.getURL("/icon/128.png"),

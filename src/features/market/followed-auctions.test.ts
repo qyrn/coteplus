@@ -6,7 +6,6 @@ import {
 	followAuction,
 	followBids,
 	nextReminderAt,
-	REMINDER_LEAD_MS,
 	unfollowAuction,
 } from "./followed-auctions";
 import type { AuctionSummary } from "./my-market";
@@ -62,6 +61,7 @@ describe("unfollowAuction", () => {
 
 describe("reminders", () => {
 	const now = 1000 * MINUTE;
+	const LEAD = 5 * MINUTE;
 
 	it("finds reminders due before the end", () => {
 		const list = [
@@ -70,13 +70,13 @@ describe("reminders", () => {
 			followed("ended", now - MINUTE),
 			followed("done", now + 2 * MINUTE, now - MINUTE),
 		];
-		expect(dueReminders(list, now).map((item) => item.id)).toEqual(["due"]);
+		expect(dueReminders(list, now, LEAD).map((item) => item.id)).toEqual(["due"]);
 	});
 
 	it("computes the next reminder time", () => {
 		const list = [followed("a", now + 30 * MINUTE), followed("b", now + 20 * MINUTE)];
-		expect(nextReminderAt(list, now)).toBe(now + 20 * MINUTE - REMINDER_LEAD_MS);
-		expect(nextReminderAt([], now)).toBeNull();
+		expect(nextReminderAt(list, now, LEAD)).toBe(now + 20 * MINUTE - LEAD);
+		expect(nextReminderAt([], now, LEAD)).toBeNull();
 	});
 
 	it("drops auctions ended more than a day ago", () => {

@@ -1,6 +1,7 @@
 import type { RequestQueue } from "../../lib/net/request-queue";
 import type { PageWatcher } from "../../lib/site/page-watcher";
 import type { PriceService } from "../prices/price-service";
+import type { LiveSettings } from "../settings/live-settings";
 import { dealText } from "./auction-deal";
 import { marketExtrasSlot } from "./market-extras-slot";
 import { findWishAuctions, type RankedAuction, rankAuctions } from "./wish-auctions";
@@ -38,6 +39,7 @@ export function startWishAuctionsPanel(
 	pageWatcher: PageWatcher,
 	siteApi: RequestQueue,
 	priceService: PriceService,
+	settings: LiveSettings,
 ): void {
 	const panel = document.createElement("section");
 	panel.className = "wmp-wish-panel";
@@ -87,7 +89,7 @@ export function startWishAuctionsPanel(
 					.catch(() => null),
 			),
 		);
-		const ranked = rankAuctions(auctions, averages);
+		const ranked = rankAuctions(auctions, averages, settings.current().greatDealPercent);
 		const list = document.createElement("ul");
 		list.className = "wmp-wish-list";
 		list.append(...ranked.map((entry, index) => rowFor(entry, index === 0 && entry.deal !== null)));

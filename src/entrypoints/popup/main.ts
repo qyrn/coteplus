@@ -1,3 +1,4 @@
+import { browser } from "wxt/browser";
 import {
 	type FollowedAuction,
 	followedAuctionsItem,
@@ -54,6 +55,9 @@ async function render(): Promise<void> {
 	);
 }
 
+requireElement("open-settings", HTMLButtonElement).addEventListener("click", () => {
+	void browser.runtime.openOptionsPage().then(() => window.close());
+});
 requireElement("open-pulls", HTMLButtonElement).addEventListener("click", () => void openAndClose("/pulls"));
 requireElement("open-market", HTMLButtonElement).addEventListener("click", () => void openAndClose("/marketplace"));
 packStockItem.watch(() => void render());

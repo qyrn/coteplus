@@ -1,5 +1,6 @@
 import { browser } from "wxt/browser";
 import { openSitePage } from "../../lib/browser/open-site-page";
+import { isQuietTime, loadSettings, settingsItem } from "../settings/settings";
 import {
 	dropLongEnded,
 	dueReminders,
@@ -39,15 +40,17 @@ async function notify(auctions: FollowedAuction[], now: number): Promise<void> {
 
 async function processReminders(): Promise<void> {
 	const now = Date.now();
+	const settings = await loadSettings();
+	const leadMs = settings.reminderLeadMinutes * MINUTE_MS;
 	const followed = await followedAuctionsItem.getValue();
-	const due = dueReminders(readFollowedAuctions(followed), now);
+	const due = dueReminders(readFollowedAuctions(followed), now, leadMs);
 	if (due.length > 0) {
 		const reminded = Object.fromEntries(due.map((auction) => [auction.id, { ...auction, remindedAt: now }]));
 		await followedAuctionsItem.setValue({ ...followed, ...reminded });
-		await notify(due, now);
+		if (!isQuietTime(settings.quietHours, new Date(now))) await notify(due, now);
 	}
 	await browser.alarms.clear(REMINDER_ALARM);
-	const next = nextReminderAt(readFollowedAuctions(await followedAuctionsItem.getValue()), Date.now());
+	const next = nextReminderAt(readFollowedAuctions(await followedAuctionsItem.getValue()), Date.now(), leadMs);
 	if (next !== null) await browser.alarms.create(REMINDER_ALARM, { when: Math.max(next, Date.now() + 1000) });
 }
 
@@ -62,6 +65,7 @@ function auctionPathFor(notificationId: string): string {
 
 export function startAuctionReminders(): void {
 	followedAuctionsItem.watch(() => void processReminders());
+	settingsItem.watch(() => void processReminders());
 	browser.alarms.onAlarm.addListener((alarm) => {
 		if (alarm.name === REMINDER_ALARM) void processReminders();
 	});

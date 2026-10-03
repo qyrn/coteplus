@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self'; style-src 'self'" />
+		<meta name="manifest.open_in_tab" content="true" />
+		<title>Réglages WikiMasters Plus</title>
+		<link rel="stylesheet" href="./style.css" />
+	</head>
+	<body>
+		<main class="settings">
+			<header class="settings-header">
+				<h1>Réglages</h1>
+				<p class="save-status" id="save-status" role="status" aria-live="polite"></p>
+			</header>
+			<form id="settings-form" novalidate>
+				<fieldset class="settings-group">
+					<legend>Marché</legend>
+					<label class="toggle-row">
+						<input type="checkbox" name="wishlistRedirect" />
+						<span>Après un ajout à ta liste de souhaits, ouvrir le marché sur les enchères de la carte</span>
+					</label>
+					<label class="number-row">
+						<span>Bonne affaire à partir de</span>
+						<span class="number-field">−<input type="number" name="greatDealPercent" inputmode="numeric" /> %</span>
+						<span class="hint">sous le prix moyen. L'enchère est alors encadrée en vert.</span>
+					</label>
+					<label class="number-row">
+						<span>Rappel</span>
+						<span class="number-field"><input type="number" name="reminderLeadMinutes" inputmode="numeric" /> min</span>
+						<span class="hint">avant la fin d'une enchère suivie.</span>
+					</label>
+				</fieldset>
+				<fieldset class="settings-group">
+					<legend>Paquets</legend>
+					<label class="toggle-row">
+						<input type="checkbox" name="packFullNotification" />
+						<span>Me prévenir quand le stock de paquets est plein</span>
+					</label>
+				</fieldset>
+				<fieldset class="settings-group">
+					<legend>Notifications</legend>
+					<label class="toggle-row">
+						<input type="checkbox" name="quietHoursEnabled" />
+						<span>Heures calmes : aucune notification sur ce créneau</span>
+					</label>
+					<div class="time-row">
+						<label>De <input type="time" name="quietHoursStart" /></label>
+						<label>à <input type="time" name="quietHoursEnd" /></label>
+					</div>
+				</fieldset>
+				<fieldset class="settings-group">
+					<legend>Collection</legend>
+					<label class="number-row">
+						<span>Avertir avant de défausser une carte qui vaut au moins</span>
+						<span class="number-field"><input type="number" name="discardGuardMinPrice" inputmode="numeric" /> W</span>
+						<span class="hint">en moyenne aux enchères. Une défausse ne rapporte que 1 W.</span>
+					</label>
+				</fieldset>
+			</form>
+		</main>
+		<script type="module" src="./main.ts"></script>
+	</body>
+</html>

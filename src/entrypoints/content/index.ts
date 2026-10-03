@@ -19,6 +19,7 @@ import { startPullStatsPanel } from "../../features/packs/pull-stats-panel";
 import { createRevealWatcher } from "../../features/packs/reveal-watcher";
 import { startAveragePrices } from "../../features/prices/average-prices";
 import { createPriceService } from "../../features/prices/price-service";
+import { watchLiveSettings } from "../../features/settings/live-settings";
 import { startTradeValues } from "../../features/trades/trade-values";
 import { createRequestQueue } from "../../lib/net/request-queue";
 import { createGuardedSiteFetcher } from "../../lib/net/site-api-guard";
@@ -55,6 +56,7 @@ export default defineContentScript({
 			fetcher: (url) => fetch(url, { credentials: "omit" }),
 		});
 		const pageWatcher = createPageWatcher(ctx);
+		const settings = watchLiveSettings(ctx);
 		const catalog = createCardCatalog(siteApi);
 		const priceService = createPriceService(siteApi, catalog);
 		const imageService = createCardImageService({ wikimediaApi, openverseApi });
@@ -62,12 +64,12 @@ export default defineContentScript({
 		startMarketCardSeed(pageWatcher, siteApi, catalog);
 		startAveragePrices(ctx, pageWatcher, priceService);
 		startBestSalesPanel(ctx, pageWatcher, catalog, priceService);
-		startMarketDeals(ctx, pageWatcher, priceService);
+		startMarketDeals(ctx, pageWatcher, priceService, settings);
 		const marketFollow = startMarketFollow(ctx, pageWatcher, siteApi);
 		startMarketReportPanel(pageWatcher, marketFollow, priceService);
-		startWishlistRedirect(ctx, pageWatcher);
+		startWishlistRedirect(ctx, pageWatcher, settings);
 		startSellerProfileLinks(ctx, pageWatcher);
-		startWishAuctionsPanel(pageWatcher, siteApi, priceService);
+		startWishAuctionsPanel(pageWatcher, siteApi, priceService, settings);
 		startTradeValues(pageWatcher, priceService);
 		startMissingImages(ctx, pageWatcher, catalog, imageService);
 		startPackStockWatcher(pageWatcher);

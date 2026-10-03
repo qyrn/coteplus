@@ -31,12 +31,21 @@ export function priceToPay(auction: AuctionSummary): number {
 	return auction.currentBid ?? auction.baseAmount ?? 0;
 }
 
-export function rankAuctions(auctions: AuctionSummary[], averages: ReadonlyArray<number | null>): RankedAuction[] {
+export function rankAuctions(
+	auctions: AuctionSummary[],
+	averages: ReadonlyArray<number | null>,
+	greatDealPercent: number,
+): RankedAuction[] {
 	return auctions
 		.map((auction, index) => {
 			const average = averages[index] ?? null;
 			const price = priceToPay(auction);
-			return { auction, price, average, deal: average === null ? null : compareToAverage(price, average) };
+			return {
+				auction,
+				price,
+				average,
+				deal: average === null ? null : compareToAverage(price, average, greatDealPercent),
+			};
 		})
 		.sort((left, right) => {
 			const leftScore = left.deal?.differencePercent ?? Number.POSITIVE_INFINITY;

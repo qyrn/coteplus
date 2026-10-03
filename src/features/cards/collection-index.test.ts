@@ -1,31 +1,44 @@
 import { describe, expect, it } from "vitest";
-import { collectionPageUrl, parseCollectionPage } from "./collection-index";
+import { aggregateOwnedCards, collectionPageUrl, parseCollectionPage } from "./collection-index";
 
 describe("parseCollectionPage", () => {
-	it("extracts owned card references and the total", () => {
+	it("extracts owned card rows and the total", () => {
 		const json = {
 			total: 1236,
 			collection: [
 				{
 					id: "copy-1",
-					card_id: "a",
+					starred: true,
 					card: { id: "a", wikipedia_title: "Benjamin  Castaldi", rarity: "L" },
 				},
-				{
-					id: "copy-2",
-					card: { id: "b", wikipedia_title: "Inconnu", rarity: "ZZ" },
-				},
+				{ id: "copy-2", card: { id: "b", wikipedia_title: "Inconnu", rarity: "ZZ" } },
 				{ id: "copy-3" },
 			],
 		};
 		expect(parseCollectionPage(json)).toEqual({
-			cards: [{ cardId: "a", hideImage: false, title: "Benjamin Castaldi", rarity: "L" }],
+			rows: [{ card: { cardId: "a", hideImage: false, title: "Benjamin Castaldi", rarity: "L" }, starred: true }],
 			total: 1236,
 		});
 	});
 
 	it("tolerates unexpected payloads", () => {
-		expect(parseCollectionPage("oops")).toEqual({ cards: [], total: null });
+		expect(parseCollectionPage("oops")).toEqual({ rows: [], total: null });
+	});
+});
+
+describe("aggregateOwnedCards", () => {
+	it("counts copies and starred copies per card", () => {
+		const card = { cardId: "a", hideImage: false, title: "Chat", rarity: "C" as const };
+		expect(
+			aggregateOwnedCards([
+				{ card, starred: false },
+				{ card, starred: true },
+				{ card: { ...card, cardId: "b", title: "Hibou" }, starred: false },
+			]),
+		).toEqual([
+			{ ...card, copies: 2, starredCopies: 1 },
+			{ ...card, cardId: "b", title: "Hibou", copies: 1, starredCopies: 0 },
+		]);
 	});
 });
 

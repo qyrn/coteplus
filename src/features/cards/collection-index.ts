@@ -12,7 +12,6 @@ export interface CollectionPage {
 
 export interface CollectionIndexer {
 	syncIfStale(): Promise<void>;
-	syncNow(): Promise<TitledCardRef[]>;
 	whenIdle(): Promise<void>;
 }
 
@@ -54,13 +53,12 @@ export function createCollectionIndexer(
 		return collectionPage;
 	}
 
-	async function sync(): Promise<TitledCardRef[]> {
+	async function sync(): Promise<void> {
 		const firstPage = await loadPage(0);
 		const pageCount = Math.ceil((firstPage.total ?? 0) / COLLECTION_PAGE_SIZE);
 		const remainingPages = Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) => index + 1);
-		const otherPages = await Promise.all(remainingPages.map(loadPage));
+		await Promise.all(remainingPages.map(loadPage));
 		await lastSyncedAt.setValue(Date.now());
-		return [firstPage, ...otherPages].flatMap((page) => page.cards);
 	}
 
 	function track<TValue>(work: Promise<TValue>): Promise<TValue> {
@@ -83,10 +81,6 @@ export function createCollectionIndexer(
 					await sync();
 				})(),
 			);
-		},
-		async syncNow() {
-			await runningSync?.catch(() => undefined);
-			return track(sync());
 		},
 		async whenIdle() {
 			await runningSync?.catch(() => undefined);

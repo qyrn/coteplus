@@ -24,40 +24,6 @@
 	box-shadow: none;
 }
 
-.wmp-toolbar {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 8px 12px;
-}
-
-.wmp-toolbar-button {
-	padding: 6px 12px;
-	border-radius: 8px;
-	border: 1px solid rgb(52 211 153 / 0.5);
-	background: rgb(52 211 153 / 0.12);
-	color: #6ee7b7;
-	font-size: 13px;
-	font-weight: 600;
-	cursor: pointer;
-	transition: background-color 120ms ease;
-}
-
-.wmp-toolbar-button:hover {
-	background: rgb(52 211 153 / 0.22);
-}
-
-.wmp-toolbar-button:focus-visible {
-	outline: 2px solid #34d399;
-	outline-offset: 2px;
-}
-
-.wmp-toolbar-status {
-	font-size: 12px;
-	font-variant-numeric: tabular-nums;
-	color: #a3aca7;
-}
-
 .wmp-art-overlay {
 	position: absolute;
 	inset: 0;

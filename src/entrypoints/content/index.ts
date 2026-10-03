@@ -7,6 +7,8 @@ import { startMissingImages } from "../../features/images/missing-images";
 import { startMarketDeals } from "../../features/market/market-deals";
 import { startMarketFollow } from "../../features/market/market-follow";
 import { startMarketReportPanel } from "../../features/market/market-report-panel";
+import { startWishAuctionsPanel } from "../../features/market/wish-auctions-panel";
+import { startWishlistRedirect } from "../../features/market/wishlist-redirect";
 import { startPackStockWatcher } from "../../features/packs/pack-stock-watcher";
 import { startPackValueRecap } from "../../features/packs/pack-value-recap";
 import { startPullRevealTracker } from "../../features/packs/pull-reveal-tracker";
@@ -57,6 +59,8 @@ export default defineContentScript({
 		startMarketDeals(ctx, pageWatcher, priceService);
 		const marketFollow = startMarketFollow(ctx, pageWatcher, siteApi);
 		startMarketReportPanel(pageWatcher, marketFollow, priceService);
+		startWishlistRedirect(ctx, pageWatcher);
+		startWishAuctionsPanel(pageWatcher, siteApi, priceService);
 		startTradeValues(pageWatcher, priceService);
 		startMissingImages(ctx, pageWatcher, catalog, imageService);
 		startPackStockWatcher(pageWatcher);

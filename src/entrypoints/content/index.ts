@@ -13,6 +13,7 @@ import { startMarketDeals } from "../../features/market/market-deals";
 import { startMarketFollow } from "../../features/market/market-follow";
 import { startMarketReportPanel } from "../../features/market/market-report-panel";
 import { startPlayerProfileLinks } from "../../features/market/player-profile-links";
+import { startStandingWatch } from "../../features/market/standing-watch";
 import { startWishAuctionsPanel } from "../../features/market/wish-auctions-panel";
 import { startWishlistRedirect } from "../../features/market/wishlist-redirect";
 import { startPackStockWatcher } from "../../features/packs/pack-stock-watcher";
@@ -72,6 +73,7 @@ export default defineContentScript({
 		startDiscardGuard(ctx, pageWatcher, priceService, settings);
 		startMarketDeals(ctx, pageWatcher, priceService, settings);
 		const marketFollow = startMarketFollow(ctx, pageWatcher, siteApi);
+		startStandingWatch(ctx, siteApi);
 		startMarketReportPanel(pageWatcher, marketFollow, priceService);
 		startWishlistRedirect(ctx, pageWatcher, settings);
 		startPlayerProfileLinks(ctx, pageWatcher);

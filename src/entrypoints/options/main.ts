@@ -28,6 +28,7 @@ const fields = {
 	wishlistRedirect: input("wishlistRedirect"),
 	greatDealPercent: input("greatDealPercent"),
 	reminderLeadMinutes: input("reminderLeadMinutes"),
+	standingNotification: input("standingNotification"),
 	packFullNotification: input("packFullNotification"),
 	quietHoursEnabled: input("quietHoursEnabled"),
 	quietHoursStart: input("quietHoursStart"),
@@ -57,6 +58,7 @@ function fill(settings: Settings): void {
 	fields.wishlistRedirect.checked = settings.wishlistRedirect;
 	fields.greatDealPercent.value = String(settings.greatDealPercent);
 	fields.reminderLeadMinutes.value = String(settings.reminderLeadMinutes);
+	fields.standingNotification.checked = settings.standingNotification;
 	fields.packFullNotification.checked = settings.packFullNotification;
 	fields.quietHoursEnabled.checked = settings.quietHours.enabled;
 	fields.quietHoursStart.value = minuteToTime(settings.quietHours.startMinute);
@@ -71,6 +73,7 @@ function readForm(): Settings {
 		wishlistRedirect: fields.wishlistRedirect.checked,
 		greatDealPercent: numberOr(fields.greatDealPercent, current.greatDealPercent),
 		reminderLeadMinutes: numberOr(fields.reminderLeadMinutes, current.reminderLeadMinutes),
+		standingNotification: fields.standingNotification.checked,
 		packFullNotification: fields.packFullNotification.checked,
 		quietHours: {
 			enabled: fields.quietHoursEnabled.checked,

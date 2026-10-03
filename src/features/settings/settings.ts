@@ -11,6 +11,7 @@ export interface Settings {
 	wishlistRedirect: boolean;
 	greatDealPercent: number;
 	reminderLeadMinutes: number;
+	standingNotification: boolean;
 	packFullNotification: boolean;
 	quietHours: QuietHours;
 	discardGuardMinPrice: number;
@@ -33,6 +34,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	wishlistRedirect: true,
 	greatDealPercent: 20,
 	reminderLeadMinutes: 5,
+	standingNotification: true,
 	packFullNotification: true,
 	quietHours: { enabled: false, startMinute: 23 * 60, endMinute: 8 * 60 },
 	discardGuardMinPrice: 10,
@@ -77,6 +79,7 @@ export function readSettings(value: unknown): Settings {
 			SETTING_RANGES.reminderLeadMinutes,
 			DEFAULT_SETTINGS.reminderLeadMinutes,
 		),
+		standingNotification: readBoolean(stored.standingNotification, DEFAULT_SETTINGS.standingNotification),
 		packFullNotification: readBoolean(stored.packFullNotification, DEFAULT_SETTINGS.packFullNotification),
 		quietHours: readQuietHours(stored.quietHours),
 		discardGuardMinPrice: clampToRange(

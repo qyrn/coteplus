@@ -15,10 +15,12 @@
 		"format": "biome check --write .",
 		"test": "vitest run",
 		"postinstall": "wxt prepare",
-		"check": "biome check . && tsc --noEmit && vitest run"
+		"check": "biome check . && tsc --noEmit && vitest run",
+		"icons": "node scripts/render-icons.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.15",
+		"@resvg/resvg-js": "^2.6.2",
 		"happy-dom": "^20.14.5",
 		"typescript": "^7.0.2",
 		"vitest": "^5.0.3",

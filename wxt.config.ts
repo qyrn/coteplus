@@ -5,16 +5,16 @@ export default defineConfig({
 	outDir: "dist",
 	manifestVersion: 3,
 	manifest: ({ browser }) => ({
-		name: "WikiMasters Plus",
-		description: "Prix moyens et outils de collection pour WikiMasters, en lecture seule.",
+		name: "Cote+",
+		description: "Prix moyens et outils de collection pour WikiMasters (extension non officielle), en lecture seule.",
 		host_permissions: ["https://www.wiki-masters.com/*"],
 		permissions: ["storage", "alarms", "notifications"],
-		action: { default_title: "WikiMasters Plus" },
+		action: { default_title: "Cote+" },
 		...(browser === "firefox"
 			? {
 					browser_specific_settings: {
 						gecko: {
-							id: "wikimasters-plus@extension",
+							id: "cote-plus@extension",
 							data_collection_permissions: { required: ["none"] },
 						},
 					},

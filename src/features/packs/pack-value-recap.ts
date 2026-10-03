@@ -5,19 +5,23 @@ const RECAP_CLASS = "wmp-pack-value";
 
 const amountFormatter = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
 
-interface PackValue {
+export interface PackValue {
 	total: number;
 	pricedCards: number;
+	unsoldCards: number;
 	revealedCards: number;
 	packSize: number;
 }
 
+const EMPTY_PACK_VALUE: PackValue = { total: 0, pricedCards: 0, unsoldCards: 0, revealedCards: 0, packSize: 0 };
+
 export function packValueText(value: PackValue): string {
-	const amount = `${amountFormatter.format(value.total)} W`;
-	const unpriced = value.revealedCards - value.pricedCards;
-	const unpricedNote = unpriced > 0 ? `, ${unpriced} sans prix` : "";
-	if (value.revealedCards >= value.packSize) return `Valeur du paquet : ${amount}${unpricedNote}`;
-	return `Valeur : ${amount} (${value.revealedCards}/${value.packSize} cartes${unpricedNote})`;
+	const pendingCards = value.revealedCards - value.pricedCards - value.unsoldCards;
+	const amount =
+		value.pricedCards > 0 ? `${amountFormatter.format(value.total)} W` : pendingCards > 0 ? "…" : "aucune vente connue";
+	const unsoldNote = value.unsoldCards > 0 ? `, ${value.unsoldCards} sans vente` : "";
+	if (value.revealedCards >= value.packSize && pendingCards === 0) return `Valeur du paquet : ${amount}${unsoldNote}`;
+	return `Valeur : ${amount} (${value.revealedCards}/${value.packSize} cartes${unsoldNote})`;
 }
 
 export function startPackValueRecap(revealWatcher: RevealWatcher, priceService: PriceService): void {
@@ -25,30 +29,38 @@ export function startPackValueRecap(revealWatcher: RevealWatcher, priceService: 
 	recap.className = RECAP_CLASS;
 	recap.setAttribute("aria-live", "polite");
 	let session = 0;
-	let value: PackValue = { total: 0, pricedCards: 0, revealedCards: 0, packSize: 0 };
+	let value: PackValue = EMPTY_PACK_VALUE;
 
 	function place(position: RevealPosition): void {
 		if (recap.previousElementSibling !== position.header) position.header.insertAdjacentElement("afterend", recap);
 	}
 
+	function update(next: PackValue): void {
+		value = next;
+		recap.textContent = packValueText(value);
+	}
+
 	revealWatcher.subscribe((event) => {
 		if (event.type === "reveal-ended") {
 			session++;
-			value = { total: 0, pricedCards: 0, revealedCards: 0, packSize: 0 };
+			value = EMPTY_PACK_VALUE;
 			recap.remove();
 			return;
 		}
 		const eventSession = session;
-		value = { ...value, revealedCards: value.revealedCards + 1, packSize: event.position.total };
 		place(event.position);
-		recap.textContent = packValueText(value);
+		update({ ...value, revealedCards: value.revealedCards + 1, packSize: event.position.total });
 		priceService
 			.getAveragePrice(event.card.title, event.card.rarity)
-			.then(({ average }) => {
-				if (eventSession !== session || average === null) return;
-				value = { ...value, total: value.total + average, pricedCards: value.pricedCards + 1 };
-				recap.textContent = packValueText(value);
-			})
-			.catch(() => undefined);
+			.then(({ average }) => average)
+			.catch(() => null)
+			.then((average) => {
+				if (eventSession !== session) return;
+				update(
+					average === null
+						? { ...value, unsoldCards: value.unsoldCards + 1 }
+						: { ...value, total: value.total + average, pricedCards: value.pricedCards + 1 },
+				);
+			});
 	});
 }

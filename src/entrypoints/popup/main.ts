@@ -9,12 +9,14 @@ import { marketSyncedAtItem, syncFollowedAuctions } from "../../features/market/
 import { packStockItem, readPackStockState } from "../../features/packs/pack-stock-store";
 import { openSitePage, SITE_ORIGIN } from "../../lib/browser/open-site-page";
 import { createRequestQueue } from "../../lib/net/request-queue";
+import { createSharedRequestBudget } from "../../lib/net/shared-request-budget";
 import { createGuardedSiteFetcher, siteApiPausedUntilItem } from "../../lib/net/site-api-guard";
 import { renderAuctionSection } from "./auction-section";
 import { renderPackSection } from "./pack-section";
 
 const REFRESH_INTERVAL_MS = 15 * 1000;
 const MARKET_SYNC_MIN_AGE_MS = 60 * 1000;
+const POPUP_REQUESTS_PER_MINUTE = 20;
 
 function requireElement<TElement extends HTMLElement>(id: string, type: new () => TElement): TElement {
 	const element = document.getElementById(id);
@@ -69,7 +71,7 @@ async function syncStandingsIfStale(): Promise<void> {
 		minIntervalMs: 0,
 		maxRetries: 0,
 		baseBackoffMs: 0,
-		fetcher: createGuardedSiteFetcher(SITE_ORIGIN),
+		fetcher: createGuardedSiteFetcher(SITE_ORIGIN, createSharedRequestBudget(POPUP_REQUESTS_PER_MINUTE)),
 	});
 	await syncFollowedAuctions(siteApi);
 }

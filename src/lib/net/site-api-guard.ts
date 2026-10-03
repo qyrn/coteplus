@@ -17,9 +17,18 @@ export function isAutomationBlock(status: number, body: unknown): boolean {
 	);
 }
 
-export function createGuardedSiteFetcher(origin: string): (url: string) => Promise<Response> {
+async function throwIfPaused(): Promise<void> {
+	if (Date.now() < (await siteApiPausedUntilItem.getValue())) throw new SiteApiPausedError("Requêtes en pause");
+}
+
+export function createGuardedSiteFetcher(
+	origin: string,
+	waitForSlot: () => Promise<void> = async () => undefined,
+): (url: string) => Promise<Response> {
 	return async (url) => {
-		if (Date.now() < (await siteApiPausedUntilItem.getValue())) throw new SiteApiPausedError("Requêtes en pause");
+		await throwIfPaused();
+		await waitForSlot();
+		await throwIfPaused();
 		const response = await fetch(new URL(url, origin), { credentials: "include" });
 		if (response.status === 403) {
 			const body: unknown = await response

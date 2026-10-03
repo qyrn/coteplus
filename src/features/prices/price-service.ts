@@ -93,7 +93,8 @@ export function createPriceService(queue: RequestQueue, catalog: CardCatalog): P
 			const legacy = await legacyStore.get(cardId);
 			if (legacy) {
 				const stats = pickPriceStats(legacy.value, rarity);
-				return { value: stats?.value ?? null, stats, refreshed: refreshInBackground(cardId, rarity, isWanted) };
+				const refreshed = isFresh(legacy.storedAt) ? null : refreshInBackground(cardId, rarity, isWanted);
+				return { value: stats?.value ?? null, stats, refreshed };
 			}
 			const stats = pickPriceStats(await fetchSheet(cardId, "visible", isWanted), rarity);
 			return { value: stats?.value ?? null, stats, refreshed: null };

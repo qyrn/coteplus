@@ -32,12 +32,13 @@ import { createPriceService } from "../../features/prices/price-service";
 import { watchLiveSettings } from "../../features/settings/live-settings";
 import { startTradeValues } from "../../features/trades/trade-values";
 import { createRequestQueue } from "../../lib/net/request-queue";
+import { createSharedRequestBudget } from "../../lib/net/shared-request-budget";
 import { createGuardedSiteFetcher } from "../../lib/net/site-api-guard";
 import { createPageWatcher } from "../../lib/site/page-watcher";
 
 const WIKIMEDIA_USER_AGENT = "CotePlus/0.1 (extension navigateur)";
 const OPENVERSE_MIN_INTERVAL_MS = 4000;
-const SITE_REQUESTS_PER_MINUTE = 30;
+const SITE_REQUESTS_PER_MINUTE = 20;
 
 export default defineContentScript({
 	matches: ["https://www.wiki-masters.com/*"],
@@ -49,7 +50,7 @@ export default defineContentScript({
 			maxPerMinute: SITE_REQUESTS_PER_MINUTE,
 			maxRetries: 2,
 			baseBackoffMs: 2000,
-			fetcher: createGuardedSiteFetcher(location.origin),
+			fetcher: createGuardedSiteFetcher(location.origin, createSharedRequestBudget(SITE_REQUESTS_PER_MINUTE)),
 		});
 		const wikimediaApi = createRequestQueue({
 			concurrency: 2,

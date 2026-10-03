@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="fr">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta
+			http-equiv="Content-Security-Policy"
+			content="default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; script-src 'self'"
+		/>
+		<title>Cote+ · la cote de tes cartes WikiMasters</title>
+		<meta
+			name="description"
+			content="Cote+ ajoute à WikiMasters la cote de chaque carte, les bonnes affaires du marché, le suivi des enchères et des garde-fous pour ta collection. Extension non officielle, en lecture seule."
+		/>
+		<link rel="icon" type="image/png" href="/favicon.png" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400..600&family=JetBrains+Mono:wght@500;700&display=swap"
+		/>
+		<link rel="stylesheet" href="/src/style.css" />
+	</head>
+	<body>
+		<div class="ticker" aria-hidden="true">
+			<div class="ticker-track">
+				<span>Cote des 20 dernières ventes</span><span>Bonnes affaires encadrées</span><span>Rappel avant la fin</span
+				><span>En tête ou dépassé</span><span>Valeur de ta collection</span><span>Cartes verrouillées</span
+				><span>Drop rate</span><span>Bilan des échanges</span><span>Cote des 20 dernières ventes</span
+				><span>Bonnes affaires encadrées</span><span>Rappel avant la fin</span><span>En tête ou dépassé</span
+				><span>Valeur de ta collection</span><span>Cartes verrouillées</span><span>Drop rate</span
+				><span>Bilan des échanges</span>
+			</div>
+		</div>
+
+		<header class="site-header">
+			<a class="brand" href="#top" aria-label="Cote+, retour en haut">
+				<img src="/logo.svg" alt="" width="36" height="36" />
+				<span>Cote<span class="plus">+</span></span>
+			</a>
+			<nav aria-label="Navigation principale">
+				<a href="#cote">La cote</a>
+				<a href="#outils">Les outils</a>
+				<a href="#promesses">Engagements</a>
+				<a href="#faq">FAQ</a>
+			</nav>
+			<a class="header-cta" href="#installer">Installer</a>
+		</header>
+
+		<main id="top">
+			<section class="hero">
+				<div class="hero-copy">
+					<p class="eyebrow">Extension Chrome pour WikiMasters · non officielle</p>
+					<h1>Sache ce que vaut une carte <em>avant</em> de miser.</h1>
+					<p class="lead">
+						Cote+ affiche la cote de chaque carte, partout sur le site. Elle repère les bonnes affaires du marché, suit tes
+						enchères et protège ta collection des erreurs. Elle regarde, elle range, elle te prévient. Elle ne joue jamais
+						à ta place.
+					</p>
+					<div class="hero-actions">
+						<a class="button button-primary" href="#installer">Installer Cote+</a>
+						<a class="text-link" href="#cote">Comment la cote est calculée</a>
+					</div>
+				</div>
+
+				<div class="hero-visual">
+					<div class="mock-card mock-card-back" aria-hidden="true"></div>
+					<article class="mock-card">
+						<div class="mock-art">
+							<span class="mock-rarity">UR</span>
+							<span class="mock-initials">TE</span>
+						</div>
+						<div class="mock-body">
+							<h2>Tour Eiffel</h2>
+							<p class="mock-badge"><span>Cote</span><b>412</b></p>
+							<p class="mock-desc">tour de fer puddlé de 330 mètres à Paris</p>
+						</div>
+					</article>
+					<p class="float-chip chip-deal">−38 % vs cote</p>
+					<p class="float-chip chip-lead"><span class="dot"></span>En tête · 255 W</p>
+				</div>
+			</section>
+
+			<section class="cote" id="cote" aria-labelledby="cote-title">
+				<div class="section-intro">
+					<p class="eyebrow">La cote</p>
+					<h2 id="cote-title">Le prix du moment, pas la moyenne de l’année.</h2>
+					<p>
+						La moyenne affichée par le site mélange toutes les ventes depuis la sortie d’une carte. Une vente à prix fou
+						il y a trois mois pèse autant qu’hier. Cote+ calcule une valeur qui suit le marché, comme l’ont proposé des
+						joueurs sur le Discord.
+					</p>
+				</div>
+
+				<div class="cote-grid">
+					<ol class="cote-steps">
+						<li>
+							<h3>Les 20 dernières ventes</h3>
+							<p>Seules les ventes récentes de la même rareté comptent.</p>
+						</li>
+						<li>
+							<h3>Le récent pèse plus</h3>
+							<p>Chaque vente compte un peu moins que la suivante, la dernière compte le plus.</p>
+						</li>
+						<li>
+							<h3>Les excès sont écartés</h3>
+							<p>Une enchère isolée à dix fois le prix ne fausse plus rien.</p>
+						</li>
+						<li>
+							<h3>Une médiane et une fourchette</h3>
+							<p>Tu vois le prix central et la zone où se fait l’essentiel des ventes.</p>
+						</li>
+					</ol>
+
+					<figure class="cote-chart">
+						<svg viewBox="0 0 480 280" role="img" aria-labelledby="chart-title chart-desc">
+							<title id="chart-title">Exemple de calcul de cote</title>
+							<desc id="chart-desc">
+								Vingt ventes d’une même carte. Une vente isolée très haute est écartée. Les ventes récentes, à droite,
+								tournent autour de 210 et la cote se place à ce niveau, avec une fourchette de 190 à 235.
+							</desc>
+							<rect class="chart-band" x="20" y="150" width="440" height="46" rx="6" />
+							<line class="chart-cote" x1="20" y1="172" x2="460" y2="172" />
+							<g class="chart-dots">
+								<circle cx="34" cy="128" r="5" />
+								<circle cx="56" cy="118" r="5" />
+								<circle cx="78" cy="140" r="5" />
+								<circle cx="100" cy="132" r="5" />
+								<circle cx="122" cy="150" r="5" />
+								<circle cx="144" cy="146" r="5" />
+								<circle cx="166" cy="158" r="5" />
+								<circle cx="188" cy="152" r="5" />
+								<circle cx="232" cy="166" r="5" />
+								<circle cx="254" cy="176" r="5" />
+								<circle cx="276" cy="160" r="5" />
+								<circle cx="298" cy="182" r="5" />
+								<circle cx="320" cy="170" r="5" />
+								<circle cx="342" cy="186" r="5" />
+								<circle cx="364" cy="168" r="5" />
+								<circle cx="386" cy="178" r="5" />
+								<circle cx="408" cy="164" r="5" />
+								<circle cx="430" cy="174" r="5" />
+								<circle cx="450" cy="170" r="5" />
+							</g>
+							<g class="chart-outlier">
+								<circle cx="210" cy="36" r="6" />
+								<line x1="202" y1="28" x2="218" y2="44" />
+								<text x="226" y="40">vente isolée, écartée</text>
+							</g>
+							<text class="chart-label" x="24" y="216">fourchette 190 à 235</text>
+							<text class="chart-label chart-label-cote" x="456" y="140" text-anchor="end">cote 210</text>
+							<text class="chart-axis" x="20" y="268">plus anciennes</text>
+							<text class="chart-axis" x="460" y="268" text-anchor="end">plus récentes</text>
+						</svg>
+						<figcaption>Exemple illustratif : vingt ventes d’une même carte, de la plus ancienne à la plus récente.</figcaption>
+					</figure>
+				</div>
+			</section>
+
+			<section class="tools" id="outils" aria-labelledby="tools-title">
+				<div class="section-intro">
+					<p class="eyebrow">Les outils</p>
+					<h2 id="tools-title">Là où tu en as besoin, sans ouvrir d’autre onglet.</h2>
+				</div>
+
+				<div class="bento">
+					<article class="tile tile-market">
+						<h3>Marché</h3>
+						<p>
+							Chaque enchère affiche son écart avec la cote. Les meilleures sont encadrées en vert. Une étoile suit
+							l’enchère, et celles où tu mises sont suivies toutes seules.
+						</p>
+						<div class="tile-demo">
+							<span class="chip chip-great">−52 % vs cote</span>
+							<span class="chip">≈ cote</span>
+							<span class="chip chip-bad">+12 % vs cote</span>
+						</div>
+					</article>
+
+					<article class="tile tile-popup">
+						<h3>Tes enchères, d’un coup d’œil</h3>
+						<p>Le popup te dit si tu es en tête ou dépassé, et te rappelle la fin quelques minutes avant.</p>
+						<ul class="mini-list">
+							<li><span class="rarity rarity-sr">SR</span>Cristaline<span class="chip chip-good">En tête · 165 W</span></li>
+							<li><span class="rarity rarity-l">L</span>Serge Gainsbourg<span class="chip chip-bad">Dépassé · 2 300 W</span></li>
+						</ul>
+					</article>
+
+					<article class="tile tile-collection">
+						<h3>Collection</h3>
+						<p>
+							La valeur de ta collection jour après jour, les cartes qui se vendraient le mieux, et un cadenas pour celles
+							que tu ne veux jamais perdre.
+						</p>
+						<svg class="sparkline" viewBox="0 0 300 64" aria-hidden="true">
+							<polygon points="4,64 4,48 50,44 96,46 142,34 188,36 234,22 296,14 296,64" />
+							<polyline points="4,48 50,44 96,46 142,34 188,36 234,22 296,14" />
+						</svg>
+					</article>
+
+					<article class="tile tile-guard">
+						<h3>Garde-fous</h3>
+						<p>
+							Avant de défausser une carte qui vaut cher, Cote+ te demande de confirmer. Une carte verrouillée ne peut être
+							ni défaussée ni mise en vente par erreur.
+						</p>
+						<p class="lock-demo">
+							<svg viewBox="0 0 24 24" aria-hidden="true">
+								<path d="M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" />
+								<path d="M7 11V7a5 5 0 0 1 10 0v4" />
+							</svg>
+							Carte verrouillée
+						</p>
+					</article>
+
+					<article class="tile tile-packs">
+						<h3>Paquets</h3>
+						<p>Une alerte quand ton stock est plein, et le drop rate réel de tes ouvertures, rareté par rareté.</p>
+						<div class="meter" aria-hidden="true">
+							<span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span
+							><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span
+							><span></span>
+						</div>
+					</article>
+
+					<article class="tile tile-trades">
+						<h3>Échanges et amis</h3>
+						<p>
+							Le bilan de chaque offre, les cartes nouvelles pour toi, ton dernier exemplaire signalé, et des notes privées
+							sur tes amis.
+						</p>
+					</article>
+
+					<article class="tile tile-notify">
+						<h3>Notifications sur ton bureau</h3>
+						<p>Surenchère, enchère gagnée, carte souhaitée en vente, offre d’échange, défi : tu choisis quoi recevoir.</p>
+					</article>
+				</div>
+			</section>
+
+			<section class="promises" id="promesses" aria-labelledby="promises-title">
+				<div class="section-intro">
+					<p class="eyebrow">Engagements</p>
+					<h2 id="promises-title">Ce que Cote+ ne fera jamais.</h2>
+					<p>
+						Les règles de WikiMasters interdisent les bots et l’automatisation. Cote+ est construite pour rester du bon
+						côté de la ligne.
+					</p>
+				</div>
+				<div class="promise-columns">
+					<div>
+						<h3>Elle ne fait jamais</h3>
+						<ul class="never">
+							<li>Ouvrir un paquet à ta place</li>
+							<li>Miser, vendre, échanger ou défausser à ta place</li>
+							<li>Contourner la vérification humaine du site</li>
+							<li>Intercepter ou modifier le trafic du site</li>
+							<li>Charger l’API en masse</li>
+						</ul>
+					</div>
+					<div>
+						<h3>Elle fait</h3>
+						<ul class="always">
+							<li>Afficher, ranger, calculer, prévenir</li>
+							<li>Lire les pages que tu ouvres, avec ta session</li>
+							<li>Limiter ses requêtes à 20 par minute, tous onglets confondus</li>
+							<li>Se mettre en pause d’elle-même si le site le demande</li>
+							<li>Garder tes réglages, tes notes et ton cache sur ton ordinateur</li>
+						</ul>
+					</div>
+				</div>
+			</section>
+
+			<section class="install" id="installer" aria-labelledby="install-title">
+				<div class="section-intro">
+					<p class="eyebrow">Installer</p>
+					<h2 id="install-title">Bientôt sur le Chrome Web Store.</h2>
+					<p>En attendant, tu peux l’installer depuis le code source, en quelques minutes.</p>
+				</div>
+				<ol class="install-steps">
+					<li>
+						<h3>Récupérer le code</h3>
+						<p>Télécharge ou clone le dépôt GitHub, puis lance <code>pnpm install</code> et <code>pnpm build</code>.</p>
+					</li>
+					<li>
+						<h3>Ouvrir les extensions</h3>
+						<p>Dans Chrome, va sur <code>chrome://extensions</code> et active le mode développeur.</p>
+					</li>
+					<li>
+						<h3>Charger Cote+</h3>
+						<p>Clique sur « Charger l’extension non empaquetée » et choisis le dossier <code>dist/chrome-mv3</code>.</p>
+					</li>
+				</ol>
+				<a class="button button-primary" href="https://github.com/qyrn/coteplus" rel="noopener noreferrer">
+					Voir le code sur GitHub
+				</a>
+			</section>
+
+			<section class="faq" id="faq" aria-labelledby="faq-title">
+				<h2 id="faq-title">Questions fréquentes</h2>
+				<details>
+					<summary>Est-ce que je risque un bannissement ?</summary>
+					<p>
+						Cote+ n’automatise aucune action de jeu et limite ses requêtes. La règle 3 du site interdit aussi toute
+						modification du service pour obtenir un avantage : afficher des informations reste une zone grise que seul
+						l’éditeur du jeu peut trancher. Tu l’utilises en connaissance de cause.
+					</p>
+				</details>
+				<details>
+					<summary>Pourquoi la cote diffère de la moyenne du site ?</summary>
+					<p>
+						La moyenne du site couvre toutes les ventes depuis la sortie de la carte. La cote ne regarde que les 20
+						dernières ventes de la rareté et écarte les prix aberrants : elle suit le marché actuel.
+					</p>
+				</details>
+				<details>
+					<summary>Pourquoi certaines cartes affichent « Prix en pause » ?</summary>
+					<p>
+						Si le site signale trop de requêtes, Cote+ arrête toutes ses demandes pendant une heure. Les prix déjà connus
+						restent en cache 30 jours, les nouveaux arrivent ensuite au fil de ta navigation.
+					</p>
+				</details>
+				<details>
+					<summary>Mes données partent-elles quelque part ?</summary>
+					<p>
+						Non. Cote+ parle seulement à WikiMasters, avec ta session, et à Wikimedia ou Openverse pour les images
+						manquantes. Tout est stocké dans ton navigateur.
+					</p>
+				</details>
+			</section>
+		</main>
+
+		<footer class="site-footer">
+			<p class="footer-note">
+				Cote+ est une extension non officielle, sans lien avec WikiMasters ni son éditeur. Les contenus des cartes viennent
+				de Wikipédia, sous licence CC BY-SA.
+			</p>
+			<a href="https://github.com/qyrn/coteplus" rel="noopener noreferrer">GitHub</a>
+		</footer>
+	</body>
+</html>

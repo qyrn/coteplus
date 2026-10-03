@@ -37,7 +37,8 @@ function renderDeal(auction: AuctionTile, text: string | null, isGreatDeal: bool
 	chip.className = DEAL_CHIP_CLASS;
 	chip.dataset.level = isGreatDeal ? "great" : "other";
 	chip.textContent = text;
-	auction.priceElement.parentElement?.append(chip);
+	const priceRow = auction.priceElement.parentElement?.parentElement;
+	priceRow?.insertAdjacentElement("afterend", chip);
 }
 
 async function showDeal(card: CardView, priceService: PriceService): Promise<void> {

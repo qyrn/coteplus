@@ -1,5 +1,6 @@
 import type { PageWatcher } from "../../lib/site/page-watcher";
 import type { PriceService } from "../prices/price-service";
+import { marketExtrasSlot } from "./market-extras-slot";
 import type { MarketFollow } from "./market-follow";
 import {
 	type AverageComparison,
@@ -11,7 +12,6 @@ import {
 import type { AuctionSummary } from "./my-market";
 
 const PANEL_ID = "wmp-market-report";
-const TABS_FIRST_LABEL = "Parcourir";
 const API_LIST_LIMIT = 50;
 
 const amountFormatter = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
@@ -32,13 +32,6 @@ function comparisonText(label: string, comparison: AverageComparison, aboveIsGoo
 	const direction = difference > 0 ? "au-dessus" : "en dessous";
 	const verdict = difference > 0 === aboveIsGood ? "bien joué" : "à surveiller";
 	return `${label} : ${Math.abs(difference)} % ${direction} de la moyenne (${verdict}, sur ${plural(comparison.comparedCount, "carte", "cartes")}).`;
-}
-
-function findTabsBar(): HTMLElement | null {
-	const firstTab = [...document.querySelectorAll<HTMLButtonElement>("main button")].find(
-		(button) => button.textContent?.trim() === TABS_FIRST_LABEL,
-	);
-	return firstTab?.parentElement ?? null;
 }
 
 function line(text: string, className?: string): HTMLParagraphElement {
@@ -111,11 +104,9 @@ export function startMarketReportPanel(
 
 	pageWatcher.subscribe(() => {
 		if (location.pathname !== "/marketplace") return;
-		const tabsBar = findTabsBar();
-		if (!tabsBar) return;
-		if (panel.nextElementSibling !== tabsBar) {
-			tabsBar.insertAdjacentElement("beforebegin", panel);
-			void refresh();
-		}
+		const slot = marketExtrasSlot();
+		if (!slot || panel.parentElement === slot) return;
+		slot.prepend(panel);
+		void refresh();
 	});
 }

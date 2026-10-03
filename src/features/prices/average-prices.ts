@@ -5,6 +5,7 @@ import type { PageWatcher } from "../../lib/site/page-watcher";
 import { handleCardsWhenVisible } from "../../lib/site/visible-cards";
 import { findPriceBadge, type PriceBadgeState, renderPriceBadge } from "./price-badge";
 import type { PriceService } from "./price-service";
+import type { PriceStats } from "./price-summary";
 
 const RENDERED_TITLE_ATTRIBUTE = "data-wmp-price-for";
 
@@ -12,8 +13,8 @@ function isRenderedFor(card: CardView): boolean {
 	return card.element.getAttribute(RENDERED_TITLE_ATTRIBUTE) === card.title && findPriceBadge(card.element) !== null;
 }
 
-function badgeStateFor(average: number | null): PriceBadgeState {
-	return average === null ? { kind: "none" } : { kind: "price", average };
+function badgeStateFor(stats: PriceStats | null): PriceBadgeState {
+	return stats === null ? { kind: "none" } : { kind: "price", stats };
 }
 
 function renderIfStillShown(card: CardView, state: PriceBadgeState): void {
@@ -26,8 +27,8 @@ async function showAveragePrice(card: CardView, priceService: PriceService): Pro
 	renderPriceBadge(card.element, card.heading, { kind: "loading" });
 	try {
 		const price = await priceService.getAveragePrice(card.title, card.rarity);
-		renderIfStillShown(card, badgeStateFor(price.average));
-		price.refreshed?.then((average) => renderIfStillShown(card, badgeStateFor(average))).catch(() => undefined);
+		renderIfStillShown(card, badgeStateFor(price.stats));
+		price.refreshed?.then((stats) => renderIfStillShown(card, badgeStateFor(stats))).catch(() => undefined);
 	} catch (error) {
 		renderIfStillShown(card, { kind: error instanceof SiteApiPausedError ? "paused" : "error" });
 	}

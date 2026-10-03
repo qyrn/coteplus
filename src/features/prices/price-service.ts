@@ -3,7 +3,7 @@ import { createTtlStore } from "../../lib/cache/ttl-store";
 import type { RequestPriority, RequestQueue } from "../../lib/net/request-queue";
 import type { Rarity } from "../../lib/site/rarity";
 import type { CardCatalog } from "../cards/card-catalog";
-import { type PriceSummary, parsePriceSummary, pickAveragePrice } from "./price-summary";
+import { type PriceStats, type PriceSummary, parsePriceSummary, pickPriceStats } from "./price-summary";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PRICE_SUMMARY_TTL_MS = 30 * DAY_MS;
@@ -11,7 +11,8 @@ const PRICE_REFRESH_AFTER_MS = 3 * DAY_MS;
 
 export interface AveragePrice {
 	average: number | null;
-	refreshed: Promise<number | null> | null;
+	stats: PriceStats | null;
+	refreshed: Promise<PriceStats | null> | null;
 }
 
 export interface PricedCardKey {
@@ -21,7 +22,7 @@ export interface PricedCardKey {
 
 export interface PriceService {
 	getAveragePrice(title: string, rarity: Rarity): Promise<AveragePrice>;
-	cachedAverages(cards: readonly PricedCardKey[]): Promise<Map<string, number>>;
+	cachedPriceStats(cards: readonly PricedCardKey[]): Promise<Map<string, PriceStats>>;
 }
 
 function isFresh(storedAt: number): boolean {
@@ -46,28 +47,28 @@ export function createPriceService(queue: RequestQueue, catalog: CardCatalog): P
 	}
 
 	return {
-		async cachedAverages(cards) {
+		async cachedPriceStats(cards) {
 			const summaries = await summaryStore.getMany(cards.map((card) => card.cardId));
-			const averages = new Map<string, number>();
+			const found = new Map<string, PriceStats>();
 			for (const card of cards) {
 				const summary = summaries.get(card.cardId);
-				const average = summary ? pickAveragePrice(summary.value, card.rarity) : null;
-				if (average !== null) averages.set(card.cardId, average);
+				const stats = summary ? pickPriceStats(summary.value, card.rarity) : null;
+				if (stats) found.set(card.cardId, stats);
 			}
-			return averages;
+			return found;
 		},
 		async getAveragePrice(title, rarity) {
 			const cardId = (await catalog.resolve(title, rarity))?.cardId;
-			if (!cardId) return { average: null, refreshed: null };
+			if (!cardId) return { average: null, stats: null, refreshed: null };
 			const cached = await summaryStore.get(cardId);
-			if (!cached) {
-				return { average: pickAveragePrice(await fetchSummary(cardId, "visible"), rarity), refreshed: null };
-			}
+			const stats = pickPriceStats(cached ? cached.value : await fetchSummary(cardId, "visible"), rarity);
 			return {
-				average: pickAveragePrice(cached.value, rarity),
-				refreshed: isFresh(cached.storedAt)
-					? null
-					: fetchSummary(cardId, "background").then((summary) => pickAveragePrice(summary, rarity)),
+				average: stats?.average ?? null,
+				stats,
+				refreshed:
+					!cached || isFresh(cached.storedAt)
+						? null
+						: fetchSummary(cardId, "background").then((summary) => pickPriceStats(summary, rarity)),
 			};
 		},
 	};

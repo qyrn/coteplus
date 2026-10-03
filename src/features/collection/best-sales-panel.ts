@@ -20,7 +20,8 @@ function findFiltersBlock(): HTMLElement | null {
 
 function copiesText(sale: BestSale): string {
 	const starred = sale.card.starredCopies > 0 ? `, ${sale.card.starredCopies} en favori` : "";
-	return `×${sale.card.copies}${sale.isDuplicate ? " · doublon" : ""}${starred}`;
+	const sales = sale.salesCount === null ? "" : ` · ${amountFormatter.format(sale.salesCount)} ventes`;
+	return `×${sale.card.copies}${sale.isDuplicate ? " · doublon" : ""}${starred}${sales}`;
 }
 
 function rowFor(sale: BestSale): HTMLLIElement {
@@ -37,6 +38,7 @@ function rowFor(sale: BestSale): HTMLLIElement {
 	const price = document.createElement("span");
 	price.className = "wmp-best-sales-price";
 	price.textContent = `≈ ${amountFormatter.format(sale.average)} W`;
+	if (sale.salesCount !== null) price.title = `${amountFormatter.format(sale.salesCount)} ventes enregistrées`;
 	const copies = document.createElement("span");
 	copies.className = "wmp-best-sales-copies";
 	copies.textContent = copiesText(sale);
@@ -75,8 +77,8 @@ export function startBestSalesPanel(
 			void catalog.collectionIndexer.syncIfStale().then(render, () => undefined);
 			return;
 		}
-		const averages = await priceService.cachedAverages(owned);
-		const view = rankBestSales(owned, (card) => averages.get(card.cardId) ?? null, {
+		const stats = await priceService.cachedPriceStats(owned);
+		const view = rankBestSales(owned, (card) => stats.get(card.cardId) ?? null, {
 			duplicatesOnly: duplicatesOnly.checked,
 			limit: LIST_LIMIT,
 		});

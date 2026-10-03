@@ -1,8 +1,10 @@
 import type { OwnedCard } from "../cards/collection-index";
+import type { PriceStats } from "../prices/price-summary";
 
 export interface BestSale {
 	card: OwnedCard;
 	average: number;
+	salesCount: number | null;
 	sellableCopies: number;
 	isDuplicate: boolean;
 }
@@ -20,16 +22,17 @@ export interface BestSalesOptions {
 
 export function rankBestSales(
 	owned: readonly OwnedCard[],
-	averageOf: (card: OwnedCard) => number | null,
+	statsOf: (card: OwnedCard) => PriceStats | null,
 	options: BestSalesOptions,
 ): BestSalesView {
 	const priced = owned.flatMap((card): BestSale[] => {
-		const average = averageOf(card);
-		if (average === null || average <= 0) return [];
+		const stats = statsOf(card);
+		if (!stats || stats.average <= 0) return [];
 		return [
 			{
 				card,
-				average,
+				average: stats.average,
+				salesCount: stats.salesCount,
 				sellableCopies: Math.max(0, card.copies - card.starredCopies),
 				isDuplicate: card.copies >= 2,
 			},

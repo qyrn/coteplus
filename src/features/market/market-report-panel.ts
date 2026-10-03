@@ -93,8 +93,8 @@ export function startMarketReportPanel(
 		const priced = auctions.flatMap((auction) =>
 			auction.cardId ? [{ cardId: auction.cardId, rarity: auction.rarity }] : [],
 		);
-		const averages = await priceService.cachedAverages(priced);
-		return auctions.map((auction) => (auction.cardId ? (averages.get(auction.cardId) ?? null) : null));
+		const stats = await priceService.cachedPriceStats(priced);
+		return auctions.map((auction) => (auction.cardId ? (stats.get(auction.cardId)?.average ?? null) : null));
 	}
 
 	async function showComparison(button: HTMLButtonElement, current: MarketReport): Promise<void> {

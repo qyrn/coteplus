@@ -1,6 +1,8 @@
+import type { PriceStats } from "./price-summary";
+
 export type PriceBadgeState =
 	| { kind: "loading" }
-	| { kind: "price"; average: number }
+	| { kind: "price"; stats: PriceStats }
 	| { kind: "none" }
 	| { kind: "error" }
 	| { kind: "paused" };
@@ -16,7 +18,7 @@ function badgeText(state: PriceBadgeState): string {
 		case "loading":
 			return "Moy. …";
 		case "price":
-			return `Moy. ${priceFormatter.format(state.average)} W`;
+			return `Moy. ${priceFormatter.format(state.stats.average)} W`;
 		case "none":
 			return "Aucune vente";
 		case "error":
@@ -24,6 +26,17 @@ function badgeText(state: PriceBadgeState): string {
 		case "paused":
 			return "Prix en pause";
 	}
+}
+
+const AVERAGE_TOOLTIP = "Prix moyen des ventes aux enchères pour cette rareté";
+
+function badgeTooltip(state: PriceBadgeState): string {
+	if (state.kind !== "price") return AVERAGE_TOOLTIP;
+	const details = [
+		state.stats.salesCount === null ? null : `${priceFormatter.format(state.stats.salesCount)} ventes`,
+		state.stats.latestPrice === null ? null : `dernière vente ${priceFormatter.format(state.stats.latestPrice)} W`,
+	].filter((detail): detail is string => detail !== null);
+	return details.length > 0 ? `${AVERAGE_TOOLTIP} (${details.join(", ")})` : AVERAGE_TOOLTIP;
 }
 
 export function findPriceBadge(cardElement: HTMLElement): HTMLElement | null {
@@ -35,6 +48,6 @@ export function renderPriceBadge(cardElement: HTMLElement, heading: HTMLElement,
 	badge.className = PRICE_BADGE_CLASS;
 	badge.dataset.state = state.kind;
 	badge.textContent = badgeText(state);
-	badge.title = "Prix moyen des ventes aux enchères pour cette rareté";
+	badge.title = badgeTooltip(state);
 	if (badge.previousElementSibling !== heading) heading.insertAdjacentElement("afterend", badge);
 }

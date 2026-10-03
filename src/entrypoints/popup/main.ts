@@ -5,13 +5,16 @@ import {
 	readFollowedAuctions,
 	stopFollowing,
 } from "../../features/market/followed-auctions";
+import { marketSyncedAtItem, syncFollowedAuctions } from "../../features/market/market-sync";
 import { packStockItem, readPackStockState } from "../../features/packs/pack-stock-store";
-import { openSitePage } from "../../lib/browser/open-site-page";
-import { siteApiPausedUntilItem } from "../../lib/net/site-api-guard";
+import { openSitePage, SITE_ORIGIN } from "../../lib/browser/open-site-page";
+import { createRequestQueue } from "../../lib/net/request-queue";
+import { createGuardedSiteFetcher, siteApiPausedUntilItem } from "../../lib/net/site-api-guard";
 import { renderAuctionSection } from "./auction-section";
 import { renderPackSection } from "./pack-section";
 
 const REFRESH_INTERVAL_MS = 15 * 1000;
+const MARKET_SYNC_MIN_AGE_MS = 60 * 1000;
 
 function requireElement<TElement extends HTMLElement>(id: string, type: new () => TElement): TElement {
 	const element = document.getElementById(id);
@@ -31,6 +34,7 @@ const auctionElements = {
 	list: requireElement("auction-list", HTMLUListElement),
 	empty: requireElement("auction-empty", HTMLParagraphElement),
 };
+const auctionSync = requireElement("auction-sync", HTMLParagraphElement);
 
 async function openAndClose(path: string): Promise<void> {
 	await openSitePage(path);
@@ -48,12 +52,26 @@ async function render(): Promise<void> {
 	pauseNotice.hidden = pausedUntil <= now;
 	pauseNotice.textContent = `Le site a signalé trop de requêtes : prix en pause jusqu'à ${timeFormatter.format(pausedUntil)}.`;
 	renderPackSection(packElements, await readPackStockState(), now);
-	renderAuctionSection(
-		auctionElements,
-		readFollowedAuctions(await followedAuctionsItem.getValue()),
-		now,
-		auctionActions,
-	);
+	const auctions = readFollowedAuctions(await followedAuctionsItem.getValue());
+	renderAuctionSection(auctionElements, auctions, now, auctionActions);
+	const syncedAt = await marketSyncedAtItem.getValue();
+	auctionSync.hidden = syncedAt === 0 || !auctions.some((auction) => auction.standing !== null);
+	auctionSync.textContent = `Statuts vérifiés à ${timeFormatter.format(syncedAt)}`;
+}
+
+async function syncStandingsIfStale(): Promise<void> {
+	const auctions = readFollowedAuctions(await followedAuctionsItem.getValue());
+	const needsUpdate = auctions.some((auction) => auction.standing !== "won" && auction.standing !== "lost");
+	const isFresh = Date.now() - (await marketSyncedAtItem.getValue()) < MARKET_SYNC_MIN_AGE_MS;
+	if (!needsUpdate || isFresh) return;
+	const siteApi = createRequestQueue({
+		concurrency: 1,
+		minIntervalMs: 0,
+		maxRetries: 0,
+		baseBackoffMs: 0,
+		fetcher: createGuardedSiteFetcher(SITE_ORIGIN),
+	});
+	await syncFollowedAuctions(siteApi);
 }
 
 requireElement("open-settings", HTMLButtonElement).addEventListener("click", () => {
@@ -64,5 +82,7 @@ requireElement("open-market", HTMLButtonElement).addEventListener("click", () =>
 packStockItem.watch(() => void render());
 followedAuctionsItem.watch(() => void render());
 siteApiPausedUntilItem.watch(() => void render());
+marketSyncedAtItem.watch(() => void render());
 setInterval(() => void render(), REFRESH_INTERVAL_MS);
 void render();
+void syncStandingsIfStale();

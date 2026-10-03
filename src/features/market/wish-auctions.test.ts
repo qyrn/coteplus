@@ -27,6 +27,8 @@ function summary(currentBid: number | null, baseAmount: number): AuctionSummary 
 		currentBid,
 		baseAmount,
 		winnerId: null,
+		currentBidderId: null,
+		sellerId: null,
 	};
 }
 

@@ -1,4 +1,4 @@
-import type { FollowedAuction } from "../../features/market/followed-auctions";
+import type { AuctionStanding, FollowedAuction } from "../../features/market/followed-auctions";
 import { icon } from "../../lib/ui/icons";
 import { timeUntil } from "./relative-time";
 
@@ -10,6 +10,38 @@ export interface AuctionSectionElements {
 export interface AuctionActions {
 	open(auction: FollowedAuction): void;
 	unfollow(auction: FollowedAuction): void;
+}
+
+const amountFormatter = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+
+const STANDING_LABELS: Record<AuctionStanding, string> = {
+	leading: "En tête",
+	outbid: "Dépassé",
+	won: "Gagnée",
+	lost: "Perdue",
+};
+
+export function standingText(auction: FollowedAuction): string | null {
+	if (!auction.standing) return null;
+	const label = STANDING_LABELS[auction.standing];
+	const showsAmount = auction.standing !== "lost" && auction.currentBid !== null;
+	return showsAmount ? `${label} · ${amountFormatter.format(auction.currentBid ?? 0)} W` : label;
+}
+
+function buildStatusLine(auction: FollowedAuction, now: number): HTMLSpanElement {
+	const line = document.createElement("span");
+	line.className = "auction-time";
+	const standing = standingText(auction);
+	const bidNote = !standing && auction.source === "bid" ? " · ta mise" : "";
+	line.append(`${timeUntil(auction.endAt, now)}${bidNote}`);
+	if (standing && auction.standing) {
+		const chip = document.createElement("span");
+		chip.className = "standing";
+		chip.dataset.standing = auction.standing;
+		chip.textContent = standing;
+		line.append(chip);
+	}
+	return line;
 }
 
 function buildRow(auction: FollowedAuction, now: number, actions: AuctionActions): HTMLLIElement {
@@ -28,10 +60,7 @@ function buildRow(auction: FollowedAuction, now: number, actions: AuctionActions
 	const title = document.createElement("span");
 	title.className = "auction-title";
 	title.textContent = auction.title;
-	const time = document.createElement("span");
-	time.className = "auction-time";
-	time.textContent = `${timeUntil(auction.endAt, now)}${auction.source === "bid" ? " · ta mise" : ""}`;
-	openButton.append(title, time);
+	openButton.append(title, buildStatusLine(auction, now));
 	openButton.addEventListener("click", () => actions.open(auction));
 
 	const unfollowButton = document.createElement("button");

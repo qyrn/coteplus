@@ -28,9 +28,12 @@ describe("parseMyMarket", () => {
 				currentBid: 330,
 				baseAmount: 10,
 				winnerId: "buyer",
+				currentBidderId: null,
+				sellerId: null,
 			},
 		]);
 		expect(market.history).toHaveLength(1);
+		expect(market.viewerId).toBe("buyer");
 	});
 });
 

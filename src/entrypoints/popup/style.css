@@ -150,3 +150,39 @@ body {
 	color: var(--warning-ink);
 	font-size: 12px;
 }
+
+.auction-time {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+}
+
+.standing {
+	padding: 1px 6px;
+	border-radius: 5px;
+	background: var(--faint);
+	color: var(--foreground-soft);
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.standing[data-standing="leading"],
+.standing[data-standing="won"] {
+	background: var(--accent-soft);
+	color: var(--accent-ink);
+}
+
+.standing[data-standing="outbid"],
+.standing[data-standing="lost"] {
+	background: var(--danger-soft);
+	color: var(--danger-ink);
+}
+
+.auction-row[data-ended="true"]:has(.standing[data-standing="won"]) {
+	opacity: 1;
+}
+
+.sync-note {
+	font-size: 11px;
+}

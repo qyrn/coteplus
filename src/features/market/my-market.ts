@@ -16,9 +16,12 @@ export interface AuctionSummary {
 	currentBid: number | null;
 	baseAmount: number | null;
 	winnerId: string | null;
+	currentBidderId: string | null;
+	sellerId: string | null;
 }
 
 export interface MyMarket {
+	viewerId: string | null;
 	bidding: AuctionSummary[];
 	won: AuctionSummary[];
 	history: AuctionSummary[];
@@ -61,6 +64,8 @@ export function readAuctionSummary(entry: unknown): AuctionSummary | null {
 		currentBid: readNumber(entry.current_bid),
 		baseAmount: readNumber(entry.base_amount),
 		winnerId: readString(entry.winner_id),
+		currentBidderId: readString(entry.current_bidder_id),
+		sellerId: readString(entry.seller_id),
 	};
 }
 
@@ -70,13 +75,17 @@ function readAuctionList(value: unknown): AuctionSummary[] {
 		: [];
 }
 
+function findViewerId(won: AuctionSummary[], history: AuctionSummary[]): string | null {
+	return (
+		won.find((auction) => auction.winnerId)?.winnerId ?? history.find((auction) => auction.sellerId)?.sellerId ?? null
+	);
+}
+
 export function parseMyMarket(json: unknown): MyMarket {
-	if (!isRecord(json)) return { bidding: [], won: [], history: [] };
-	return {
-		bidding: readAuctionList(json.bidding),
-		won: readAuctionList(json.won),
-		history: readAuctionList(json.history),
-	};
+	if (!isRecord(json)) return { viewerId: null, bidding: [], won: [], history: [] };
+	const won = readAuctionList(json.won);
+	const history = readAuctionList(json.history);
+	return { viewerId: findViewerId(won, history), bidding: readAuctionList(json.bidding), won, history };
 }
 
 export async function fetchMyMarket(siteApi: RequestQueue): Promise<MyMarket> {

@@ -7,6 +7,7 @@ import {
 	followBids,
 	nextReminderAt,
 	unfollowAuction,
+	updateStandings,
 } from "./followed-auctions";
 import type { AuctionSummary } from "./my-market";
 
@@ -24,11 +25,22 @@ function auction(id: string, endAt: number, status: AuctionSummary["status"] = "
 		currentBid: 10,
 		baseAmount: 1,
 		winnerId: null,
+		currentBidderId: null,
+		sellerId: null,
 	};
 }
 
 function followed(id: string, endAt: number, remindedAt: number | null = null): FollowedAuction {
-	return { id, title: `Carte ${id}`, rarity: "R", endAt, source: "manual", remindedAt };
+	return {
+		id,
+		title: `Carte ${id}`,
+		rarity: "R",
+		endAt,
+		source: "manual",
+		remindedAt,
+		standing: null,
+		currentBid: null,
+	};
 }
 
 describe("followAuction", () => {
@@ -82,5 +94,43 @@ describe("reminders", () => {
 	it("drops auctions ended more than a day ago", () => {
 		const list = { old: followed("old", now - 25 * 60 * MINUTE), recent: followed("recent", now - MINUTE) };
 		expect(Object.keys(dropLongEnded(list, now))).toEqual(["recent"]);
+	});
+});
+
+describe("updateStandings", () => {
+	const now = 1000 * MINUTE;
+	const market = (bidding: AuctionSummary[], won: AuctionSummary[] = []) => ({
+		viewerId: "me",
+		bidding,
+		won,
+		history: [],
+	});
+
+	it("tells whether the player leads a live auction", () => {
+		const list = { a: followed("a", now + MINUTE), b: followed("b", now + MINUTE) };
+		const bids = [
+			{ ...auction("a", now + MINUTE), currentBidderId: "me", currentBid: 120 },
+			{ ...auction("b", now + MINUTE), currentBidderId: "rival", currentBid: 80 },
+		];
+		const result = updateStandings(list, market(bids), now);
+		expect(result.a).toMatchObject({ standing: "leading", currentBid: 120 });
+		expect(result.b).toMatchObject({ standing: "outbid", currentBid: 80 });
+	});
+
+	it("settles ended auctions as won or lost", () => {
+		const list = {
+			won: { ...followed("won", now - MINUTE), standing: "leading" as const },
+			lost: { ...followed("lost", now - MINUTE), standing: "outbid" as const },
+			watched: followed("watched", now - MINUTE),
+		};
+		const result = updateStandings(list, market([], [auction("won", now - MINUTE)]), now);
+		expect(result.won?.standing).toBe("won");
+		expect(result.lost?.standing).toBe("lost");
+		expect(result.watched?.standing).toBeNull();
+	});
+
+	it("changes nothing without the player id", () => {
+		const list = { a: followed("a", now + MINUTE) };
+		expect(updateStandings(list, { ...market([auction("a", now + MINUTE)]), viewerId: null }, now)).toBe(list);
 	});
 });

@@ -3,15 +3,9 @@ import type { RequestQueue } from "../../lib/net/request-queue";
 import type { PageWatcher } from "../../lib/site/page-watcher";
 import { createButton, setButtonContent } from "../../lib/ui/button";
 import { AUCTION_TILE_SELECTOR, TILE_ID_PREFIX, tileActions } from "./auction-tile-actions";
-import {
-	type FollowedAuctions,
-	followAuction,
-	followBids,
-	followedAuctionsItem,
-	stopFollowing,
-	unfollowedBidsItem,
-} from "./followed-auctions";
-import { auctionDetailUrl, fetchMyMarket, type MyMarket, parseAuctionDetail } from "./my-market";
+import { type FollowedAuctions, followAuction, followedAuctionsItem, stopFollowing } from "./followed-auctions";
+import { syncFollowedAuctions } from "./market-sync";
+import { auctionDetailUrl, type MyMarket, parseAuctionDetail } from "./my-market";
 
 const FOLLOW_BUTTON_CLASS = "wmp-follow-button";
 const COMPACT_BUTTON_CLASS = "wmp-follow-compact";
@@ -59,14 +53,9 @@ export function startMarketFollow(
 		for (const followButton of buttons.values()) renderFollowButton(followButton, followButton.auctionId in followed);
 	}
 
-	async function syncBids(): Promise<MyMarket | null> {
+	function syncBids(): Promise<MyMarket | null> {
 		lastSyncAt = Date.now();
-		const market = await fetchMyMarket(siteApi).catch(() => null);
-		if (market) {
-			const excluded = await unfollowedBidsItem.getValue();
-			await followedAuctionsItem.setValue(followBids(await followedAuctionsItem.getValue(), market.bidding, excluded));
-		}
-		return market;
+		return syncFollowedAuctions(siteApi);
 	}
 
 	function syncBidsIfStale(): Promise<MyMarket | null> {

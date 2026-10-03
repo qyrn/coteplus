@@ -14,6 +14,8 @@ function auction(overrides: Partial<AuctionSummary>): AuctionSummary {
 		currentBid: 100,
 		baseAmount: 10,
 		winnerId: "someone",
+		currentBidderId: null,
+		sellerId: null,
 		...overrides,
 	};
 }
@@ -21,6 +23,7 @@ function auction(overrides: Partial<AuctionSummary>): AuctionSummary {
 describe("buildMarketReport", () => {
 	it("separates sales from purchases found in the history", () => {
 		const report = buildMarketReport({
+			viewerId: "me",
 			bidding: [],
 			won: [auction({ winnerId: "me", finalPrice: 40 }), auction({ winnerId: "me", finalPrice: 60 })],
 			history: [

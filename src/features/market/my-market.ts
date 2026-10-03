@@ -7,6 +7,7 @@ export type AuctionStatus = "active" | "settled_sold" | "settled_unsold" | "canc
 
 export interface AuctionSummary {
 	id: string;
+	cardId: string | null;
 	title: string;
 	rarity: Rarity;
 	endAt: number;
@@ -51,6 +52,7 @@ export function readAuctionSummary(entry: unknown): AuctionSummary | null {
 		return null;
 	return {
 		id,
+		cardId: readString(entry.card_id) ?? readString(entry.card.id),
 		title: normalizeTitle(title),
 		rarity,
 		endAt,

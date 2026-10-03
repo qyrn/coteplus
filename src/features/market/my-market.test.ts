@@ -19,6 +19,7 @@ describe("parseMyMarket", () => {
 		expect(market.won).toEqual([
 			{
 				id: auctionJson.id,
+				cardId: null,
 				title: "KGB",
 				rarity: "SR",
 				endAt: Date.parse(auctionJson.end_at),

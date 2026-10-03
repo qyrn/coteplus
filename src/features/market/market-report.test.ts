@@ -5,6 +5,7 @@ import type { AuctionSummary } from "./my-market";
 function auction(overrides: Partial<AuctionSummary>): AuctionSummary {
 	return {
 		id: "00000000-0000-0000-0000-000000000000",
+		cardId: null,
 		title: "Carte",
 		rarity: "R",
 		endAt: 0,

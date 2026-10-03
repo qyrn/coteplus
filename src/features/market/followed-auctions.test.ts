@@ -16,6 +16,7 @@ const MINUTE = 60 * 1000;
 function auction(id: string, endAt: number, status: AuctionSummary["status"] = "active"): AuctionSummary {
 	return {
 		id,
+		cardId: null,
 		title: `Carte ${id}`,
 		rarity: "R",
 		endAt,

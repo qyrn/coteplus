@@ -7,6 +7,7 @@ import {
 	buildMarketReport,
 	compareWithAverages,
 	differenceFromAverage,
+	finalPriceOf,
 	type MarketReport,
 } from "./market-report";
 import type { AuctionSummary } from "./my-market";
@@ -15,6 +16,7 @@ const PANEL_ID = "wmp-market-report";
 const API_LIST_LIMIT = 50;
 
 const amountFormatter = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+const dateFormatter = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit" });
 
 function signedAmount(amount: number): string {
 	const sign = amount > 0 ? "+" : amount < 0 ? "−" : "";
@@ -32,6 +34,38 @@ function comparisonText(label: string, comparison: AverageComparison, aboveIsGoo
 	const direction = difference > 0 ? "au-dessus" : "en dessous";
 	const verdict = difference > 0 === aboveIsGood ? "bien joué" : "à surveiller";
 	return `${label} : ${Math.abs(difference)} % ${direction} de la moyenne (${verdict}, sur ${plural(comparison.comparedCount, "carte", "cartes")}).`;
+}
+
+function historyList(label: string, auctions: AuctionSummary[], sign: 1 | -1): HTMLDetailsElement {
+	const details = document.createElement("details");
+	details.className = "wmp-market-history";
+	const summary = document.createElement("summary");
+	summary.textContent = `${label} (${auctions.length})`;
+	const list = document.createElement("ul");
+	const rows = [...auctions]
+		.sort((left, right) => right.endAt - left.endAt)
+		.map((auction) => {
+			const row = document.createElement("li");
+			const date = document.createElement("span");
+			date.className = "wmp-market-history-date";
+			date.textContent = dateFormatter.format(auction.endAt);
+			const rarity = document.createElement("span");
+			rarity.className = "wmp-market-history-rarity";
+			rarity.style.setProperty("--wmp-rarity-color", `var(--color-rarity-${auction.rarity.toLowerCase()})`);
+			rarity.textContent = auction.rarity;
+			const title = document.createElement("span");
+			title.className = "wmp-market-history-title";
+			title.textContent = auction.title;
+			const amount = document.createElement("span");
+			amount.className = "wmp-market-history-amount";
+			amount.dataset.sign = sign > 0 ? "positive" : "negative";
+			amount.textContent = signedAmount(sign * finalPriceOf(auction));
+			row.append(date, rarity, title, amount);
+			return row;
+		});
+	list.append(...rows);
+	details.append(summary, list);
+	return details;
 }
 
 function line(text: string, className?: string): HTMLParagraphElement {
@@ -55,23 +89,20 @@ export function startMarketReportPanel(
 	body.className = "wmp-market-report-body";
 	panel.append(summary, body);
 
-	async function averagesOf(auctions: AuctionSummary[]): Promise<Array<number | null>> {
-		return Promise.all(
-			auctions.map((auction) =>
-				priceService
-					.getAveragePrice(auction.title, auction.rarity)
-					.then((price) => price.average)
-					.catch(() => null),
-			),
+	async function cachedAveragesOf(auctions: AuctionSummary[]): Promise<Array<number | null>> {
+		const priced = auctions.flatMap((auction) =>
+			auction.cardId ? [{ cardId: auction.cardId, rarity: auction.rarity }] : [],
 		);
+		const averages = await priceService.cachedAverages(priced);
+		return auctions.map((auction) => (auction.cardId ? (averages.get(auction.cardId) ?? null) : null));
 	}
 
 	async function showComparison(button: HTMLButtonElement, current: MarketReport): Promise<void> {
 		button.disabled = true;
 		button.textContent = "Comparaison en cours…";
 		const [saleAverages, purchaseAverages] = await Promise.all([
-			averagesOf(current.sales),
-			averagesOf(current.purchases),
+			cachedAveragesOf(current.sales),
+			cachedAveragesOf(current.purchases),
 		]);
 		button.replaceWith(
 			line(comparisonText("Tes ventes", compareWithAverages(current.sales, saleAverages), true)),
@@ -92,6 +123,8 @@ export function startMarketReportPanel(
 			line(`Solde : ${signedAmount(current.net)}`, "wmp-market-report-net"),
 			...(isCapped ? [line("Calculé sur les 50 dernières enchères de chaque liste.", "wmp-market-report-note")] : []),
 			compareButton,
+			historyList("Détail des ventes", current.sales, 1),
+			historyList("Détail des achats", current.purchases, -1),
 		);
 	}
 

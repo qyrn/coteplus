@@ -18,6 +18,7 @@ function auctionJson(id: string, title: string, overrides: Record<string, unknow
 function summary(currentBid: number | null, baseAmount: number): AuctionSummary {
 	return {
 		id: "x",
+		cardId: null,
 		title: "Chat",
 		rarity: "R",
 		endAt: 0,

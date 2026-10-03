@@ -23,7 +23,7 @@ function mostFrequent(values: string[]): string | null {
 	return [...counts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? null;
 }
 
-function finalPriceOf(auction: AuctionSummary): number {
+export function finalPriceOf(auction: AuctionSummary): number {
 	return auction.finalPrice ?? auction.currentBid ?? 0;
 }
 

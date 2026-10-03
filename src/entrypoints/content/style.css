@@ -471,3 +471,57 @@
 	font-size: 11px;
 	color: #a3aca7;
 }
+
+.wmp-market-history {
+	margin-top: 6px;
+}
+
+.wmp-market-history summary {
+	font-size: 12px;
+	font-weight: 600;
+	color: #a3aca7;
+	cursor: pointer;
+}
+
+.wmp-market-history ul {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	max-height: 260px;
+	margin: 6px 0 0;
+	padding: 0;
+	overflow-y: auto;
+	list-style: none;
+}
+
+.wmp-market-history li {
+	display: grid;
+	grid-template-columns: 44px 28px minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 8px;
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+}
+
+.wmp-market-history-date {
+	color: #a3aca7;
+}
+
+.wmp-market-history-rarity {
+	font-weight: 700;
+	color: var(--wmp-rarity-color, #a3aca7);
+}
+
+.wmp-market-history-title {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.wmp-market-history-amount[data-sign="positive"] {
+	color: #6ee7b7;
+}
+
+.wmp-market-history-amount[data-sign="negative"] {
+	color: #fecaca;
+}

@@ -4,8 +4,8 @@ import type { PageWatcher } from "../../lib/site/page-watcher";
 import { handleCardsWhenVisible } from "../../lib/site/visible-cards";
 import type { PriceService } from "../prices/price-service";
 import type { LiveSettings } from "../settings/live-settings";
-import { type AuctionDeal, compareToAverage, dealText, readAuctionPrice } from "./auction-deal";
-import { AUCTION_TILE_SELECTOR } from "./auction-tile-actions";
+import { type AuctionDeal, compareToAverage, dealText, readAuctionAmount } from "./auction-deal";
+import { AUCTION_TILE_SELECTOR, tileActions } from "./auction-tile-actions";
 
 const DEAL_CHIP_CLASS = "wmp-deal-chip";
 const GREAT_DEAL_CLASS = "wmp-great-deal";
@@ -13,16 +13,15 @@ const HANDLED_KEY_ATTRIBUTE = "data-wmp-deal-for";
 
 interface AuctionTile {
 	tile: HTMLElement;
-	priceElement: HTMLElement;
 	amount: number;
 	key: string;
 }
 
 function readAuctionTile(card: CardView): AuctionTile | null {
 	const tile = card.element.closest<HTMLElement>(AUCTION_TILE_SELECTOR);
-	const price = tile ? readAuctionPrice(tile) : null;
-	if (!tile || !price) return null;
-	return { tile, priceElement: price.element, amount: price.amount, key: `${card.title}|${price.amount}` };
+	const amount = tile ? readAuctionAmount(tile) : null;
+	if (!tile || amount === null) return null;
+	return { tile, amount, key: `${card.title}|${amount}` };
 }
 
 function isHandled(card: CardView): boolean {
@@ -40,8 +39,7 @@ function renderDeal(auction: AuctionTile, deal: AuctionDeal | null): void {
 	chip.className = `wmp-chip ${DEAL_CHIP_CLASS}`;
 	chip.dataset.tone = DEAL_TONES[deal.level];
 	chip.textContent = dealText(deal);
-	const priceRow = auction.priceElement.parentElement?.parentElement;
-	priceRow?.insertAdjacentElement("afterend", chip);
+	tileActions(auction.tile).prepend(chip);
 }
 
 async function showDeal(card: CardView, priceService: PriceService, settings: LiveSettings): Promise<void> {

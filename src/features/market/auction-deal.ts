@@ -5,11 +5,6 @@ export interface AuctionDeal {
 	differencePercent: number;
 }
 
-export interface AuctionPrice {
-	element: HTMLElement;
-	amount: number;
-}
-
 const ACTIVE_PRICE_LABELS = new Set(["Mise actuelle", "Mise de départ"]);
 const EXPENSIVE_THRESHOLD = 10;
 
@@ -26,12 +21,11 @@ export function parseAmount(text: string): number | null {
 	return /^\d+$/.test(digits) ? Number(digits) : null;
 }
 
-export function readAuctionPrice(tile: ParentNode): AuctionPrice | null {
+export function readAuctionAmount(tile: ParentNode): number | null {
 	for (const label of tile.querySelectorAll("span")) {
 		if (!ACTIVE_PRICE_LABELS.has(label.textContent?.trim() ?? "")) continue;
-		const value = label.nextElementSibling;
-		const amount = parseAmount(value?.textContent ?? "");
-		if (value instanceof HTMLElement && amount !== null) return { element: value, amount };
+		const amount = parseAmount(label.nextElementSibling?.textContent ?? "");
+		if (amount !== null) return amount;
 	}
 	return null;
 }

@@ -14,6 +14,15 @@ import {
 import { auctionDetailUrl, fetchMyMarket, type MyMarket, parseAuctionDetail } from "./my-market";
 
 const FOLLOW_BUTTON_CLASS = "wmp-follow-button";
+const COMPACT_BUTTON_CLASS = "wmp-follow-compact";
+
+type FollowPlacement = "tile" | "detail";
+
+interface FollowButton {
+	auctionId: string;
+	placement: FollowPlacement;
+	button: HTMLButtonElement;
+}
 const DETAIL_PATH_PATTERN = /^\/marketplace\/([0-9a-f-]{36})$/i;
 const BID_BUTTON_LABEL = "Miser";
 const MARKET_SYNC_INTERVAL_MS = 60 * 1000;
@@ -23,10 +32,13 @@ function isMarketplaceRoute(pathname: string): boolean {
 	return pathname === "/marketplace" || pathname.startsWith("/marketplace/");
 }
 
-function renderFollowButton(button: HTMLButtonElement, isFollowed: boolean): void {
-	setButtonContent(button, isFollowed ? "Suivie" : "Suivre", "star");
+function renderFollowButton({ button, placement }: FollowButton, isFollowed: boolean): void {
+	const hint = isFollowed
+		? "Ne plus suivre cette enchère"
+		: "Suivre cette enchère pour recevoir un rappel avant la fin";
+	setButtonContent(button, placement === "tile" ? hint : isFollowed ? "Suivie" : "Suivre", "star");
 	button.setAttribute("aria-pressed", String(isFollowed));
-	button.title = isFollowed ? "Ne plus suivre cette enchère" : "Recevoir un rappel avant la fin";
+	button.title = hint;
 }
 
 export interface MarketFollow {
@@ -41,10 +53,10 @@ export function startMarketFollow(
 	let followed: FollowedAuctions = {};
 	let lastSyncAt = 0;
 	let syncing: Promise<MyMarket | null> | null = null;
-	const buttons = new Map<string, HTMLButtonElement>();
+	const buttons = new Map<string, FollowButton>();
 
 	function renderButtons(): void {
-		for (const [auctionId, button] of buttons) renderFollowButton(button, auctionId in followed);
+		for (const followButton of buttons.values()) renderFollowButton(followButton, followButton.auctionId in followed);
 	}
 
 	async function syncBids(): Promise<MyMarket | null> {
@@ -74,9 +86,11 @@ export function startMarketFollow(
 		await followedAuctionsItem.setValue(followAuction(await followedAuctionsItem.getValue(), auction, "manual"));
 	}
 
-	function createFollowButton(auctionId: string): HTMLButtonElement {
-		const button = createButton("Suivre", "ghost", "star");
+	function createFollowButton(auctionId: string, placement: FollowPlacement): FollowButton {
+		const button =
+			placement === "tile" ? createButton("Suivre", "icon", "star") : createButton("Suivre", "ghost", "star");
 		button.classList.add(FOLLOW_BUTTON_CLASS);
+		if (placement === "tile") button.classList.add(COMPACT_BUTTON_CLASS);
 		button.addEventListener("click", (event) => {
 			event.preventDefault();
 			event.stopPropagation();
@@ -87,27 +101,28 @@ export function startMarketFollow(
 					button.disabled = false;
 				});
 		});
-		renderFollowButton(button, auctionId in followed);
-		buttons.set(auctionId, button);
-		return button;
+		const followButton = { auctionId, placement, button };
+		renderFollowButton(followButton, auctionId in followed);
+		buttons.set(`${placement}:${auctionId}`, followButton);
+		return followButton;
 	}
 
-	function buttonFor(auctionId: string): HTMLButtonElement {
-		return buttons.get(auctionId) ?? createFollowButton(auctionId);
+	function buttonFor(auctionId: string, placement: FollowPlacement): HTMLButtonElement {
+		return (buttons.get(`${placement}:${auctionId}`) ?? createFollowButton(auctionId, placement)).button;
 	}
 
 	function placeTileButtons(): void {
 		for (const tile of document.querySelectorAll<HTMLElement>(AUCTION_TILE_SELECTOR)) {
 			const auctionId = tile.id.slice(TILE_ID_PREFIX.length);
-			const button = buttonFor(auctionId);
+			const button = buttonFor(auctionId, "tile");
 			const actions = tileActions(tile);
-			if (button.parentElement !== actions) actions.prepend(button);
+			if (actions.lastElementChild !== button) actions.append(button);
 		}
 	}
 
 	function placeDetailButton(auctionId: string): void {
 		const heading = document.querySelector<HTMLElement>("main h1");
-		const button = buttonFor(auctionId);
+		const button = buttonFor(auctionId, "detail");
 		if (heading && button.previousElementSibling !== heading) heading.insertAdjacentElement("afterend", button);
 	}
 

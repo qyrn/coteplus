@@ -395,10 +395,6 @@ html.light .wmp-rarity {
 		linear-gradient(160deg, color-mix(in srgb, var(--wmp-cover-color, #34d399) 35%, #0c0d0c), #0c0d0c);
 }
 
-.wmp-deal-chip {
-	margin-top: 8px;
-}
-
 .wmp-great-deal {
 	border-radius: 18px;
 	outline: 2px solid var(--wmp-accent);
@@ -408,18 +404,27 @@ html.light .wmp-rarity {
 
 .wmp-tile-actions {
 	display: flex;
-	flex-wrap: wrap;
 	align-items: center;
-	justify-content: center;
-	gap: 6px 10px;
-	margin-top: 8px;
+	gap: 6px;
+	width: 100%;
+	min-height: 26px;
 }
 
 .wmp-follow-button {
-	height: 28px;
-	padding: 0 11px;
 	border-radius: 999px;
-	font-size: 12px;
+}
+
+.wmp-follow-compact {
+	width: 26px;
+	height: 26px;
+	margin-left: auto;
+	border: 1px solid var(--wmp-border);
+}
+
+.wmp-follow-compact[aria-pressed="true"] {
+	border-color: var(--wmp-accent-line);
+	background: var(--wmp-accent-soft);
+	color: var(--wmp-accent-ink);
 }
 
 h1 + .wmp-follow-button {
@@ -930,7 +935,7 @@ html.light .wmp-pull-bar > span {
 	transition: transform 0.2s ease;
 }
 
-.wmp-btn-ghost[aria-pressed="true"] .wmp-icon {
+.wmp-follow-button[aria-pressed="true"] .wmp-icon {
 	fill: currentColor;
 }
 

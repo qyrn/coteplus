@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareToAverage, dealText, parseAmount, readAuctionPrice } from "./auction-deal";
+import { compareToAverage, dealText, parseAmount, readAuctionAmount } from "./auction-deal";
 
 describe("compareToAverage", () => {
 	it("flags prices well under the average as great deals", () => {
@@ -27,15 +27,15 @@ describe("parseAmount", () => {
 	});
 });
 
-describe("readAuctionPrice", () => {
+describe("readAuctionAmount", () => {
 	it("reads the amount next to the price label", () => {
 		document.body.innerHTML = "<div><div><span>Mise actuelle</span><span>1 240</span></div></div>";
-		expect(readAuctionPrice(document.body)?.amount).toBe(1240);
+		expect(readAuctionAmount(document.body)).toBe(1240);
 	});
 
 	it("ignores settled auctions", () => {
 		document.body.innerHTML = "<div><span>Vendue pour</span><span>300</span></div>";
-		expect(readAuctionPrice(document.body)).toBeNull();
+		expect(readAuctionAmount(document.body)).toBeNull();
 	});
 });
 

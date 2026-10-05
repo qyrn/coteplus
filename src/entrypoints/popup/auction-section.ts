@@ -21,11 +21,14 @@ const STANDING_LABELS: Record<AuctionStanding, string> = {
 	lost: "Perdue",
 };
 
+export function isShownInPopup(auction: FollowedAuction, now: number): boolean {
+	return auction.endAt > now || auction.standing === "won" || auction.standing === "leading";
+}
+
 export function standingText(auction: FollowedAuction): string | null {
 	if (!auction.standing) return null;
 	const label = STANDING_LABELS[auction.standing];
-	const showsAmount = auction.standing !== "lost" && auction.currentBid !== null;
-	return showsAmount ? `${label} · ${amountFormatter.format(auction.currentBid ?? 0)} W` : label;
+	return auction.currentBid === null ? label : `${label} · ${amountFormatter.format(auction.currentBid)} W`;
 }
 
 function buildStatusLine(auction: FollowedAuction, now: number): HTMLSpanElement {

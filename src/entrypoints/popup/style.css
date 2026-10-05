@@ -173,8 +173,7 @@ body {
 	color: var(--accent-ink);
 }
 
-.standing[data-standing="outbid"],
-.standing[data-standing="lost"] {
+.standing[data-standing="outbid"] {
 	background: var(--danger-soft);
 	color: var(--danger-ink);
 }

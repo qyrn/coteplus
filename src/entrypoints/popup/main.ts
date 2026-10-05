@@ -11,7 +11,7 @@ import { openSitePage, SITE_ORIGIN } from "../../lib/browser/open-site-page";
 import { createRequestQueue } from "../../lib/net/request-queue";
 import { createSharedRequestBudget } from "../../lib/net/shared-request-budget";
 import { createGuardedSiteFetcher, siteApiPausedUntilItem } from "../../lib/net/site-api-guard";
-import { renderAuctionSection } from "./auction-section";
+import { isShownInPopup, renderAuctionSection } from "./auction-section";
 import { renderPackSection } from "./pack-section";
 
 const REFRESH_INTERVAL_MS = 15 * 1000;
@@ -54,7 +54,9 @@ async function render(): Promise<void> {
 	pauseNotice.hidden = pausedUntil <= now;
 	pauseNotice.textContent = `Le site a signalé trop de requêtes : prix en pause jusqu'à ${timeFormatter.format(pausedUntil)}.`;
 	renderPackSection(packElements, await readPackStockState(), now);
-	const auctions = readFollowedAuctions(await followedAuctionsItem.getValue());
+	const auctions = readFollowedAuctions(await followedAuctionsItem.getValue()).filter((auction) =>
+		isShownInPopup(auction, now),
+	);
 	renderAuctionSection(auctionElements, auctions, now, auctionActions);
 	const syncedAt = await marketSyncedAtItem.getValue();
 	auctionSync.hidden = syncedAt === 0 || !auctions.some((auction) => auction.standing !== null);

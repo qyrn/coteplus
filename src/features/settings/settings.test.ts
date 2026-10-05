@@ -12,10 +12,16 @@ describe("readSettings", () => {
 	});
 
 	it("clamps numbers to their range", () => {
-		const settings = readSettings({ greatDealPercent: 300, reminderLeadMinutes: 0, discardGuardMinPrice: 12.6 });
+		const settings = readSettings({
+			greatDealPercent: 300,
+			reminderLeadMinutes: 0,
+			discardGuardMinPrice: 12.6,
+			autoTagForSaleMinCote: 0,
+		});
 		expect(settings.greatDealPercent).toBe(90);
 		expect(settings.reminderLeadMinutes).toBe(1);
 		expect(settings.discardGuardMinPrice).toBe(13);
+		expect(settings.autoTagForSaleMinCote).toBe(1);
 	});
 });
 

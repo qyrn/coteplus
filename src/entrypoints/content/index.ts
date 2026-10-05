@@ -1,5 +1,6 @@
 import "./style.css";
 import { defineContentScript } from "wxt/utils/define-content-script";
+import { startAutoTagPanel } from "../../features/auto-tags/auto-tag-panel";
 import { createCardCatalog } from "../../features/cards/card-catalog";
 import { startCollectionAutoSync } from "../../features/cards/collection-auto-sync";
 import { startGlobalSearchLearner } from "../../features/cards/global-search-learner";
@@ -77,6 +78,7 @@ export default defineContentScript({
 		startCoteBadges(ctx, pageWatcher, priceService);
 		startBestSalesPanel(ctx, pageWatcher, catalog, priceService);
 		startCollectionValuePanel(ctx, pageWatcher, priceService);
+		startAutoTagPanel(ctx, pageWatcher, priceService, settings);
 		startActionGuard(ctx);
 		startDiscardGuard(pageWatcher, priceService, settings);
 		startLockButtons(ctx, pageWatcher);

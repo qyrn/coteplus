@@ -18,6 +18,7 @@ export interface Settings {
 	packFullNotification: boolean;
 	quietHours: QuietHours;
 	discardGuardMinPrice: number;
+	autoTagForSaleMinCote: number;
 }
 
 export interface NumberRange {
@@ -31,6 +32,7 @@ export const SETTING_RANGES = {
 	greatDealPercent: { min: 5, max: 90 },
 	reminderLeadMinutes: { min: 1, max: 60 },
 	discardGuardMinPrice: { min: 1, max: 1_000_000 },
+	autoTagForSaleMinCote: { min: 1, max: 1_000_000 },
 } satisfies Record<string, NumberRange>;
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -41,6 +43,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	packFullNotification: true,
 	quietHours: { enabled: false, startMinute: 23 * 60, endMinute: 8 * 60 },
 	discardGuardMinPrice: 10,
+	autoTagForSaleMinCote: 100,
 };
 
 export const settingsItem = storage.defineItem<unknown>("local:settings", { fallback: DEFAULT_SETTINGS });
@@ -101,6 +104,11 @@ export function readSettings(value: unknown): Settings {
 			stored.discardGuardMinPrice,
 			SETTING_RANGES.discardGuardMinPrice,
 			DEFAULT_SETTINGS.discardGuardMinPrice,
+		),
+		autoTagForSaleMinCote: clampToRange(
+			stored.autoTagForSaleMinCote,
+			SETTING_RANGES.autoTagForSaleMinCote,
+			DEFAULT_SETTINGS.autoTagForSaleMinCote,
 		),
 	};
 }

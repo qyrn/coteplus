@@ -744,6 +744,40 @@ h1 + .wmp-follow-button {
 	justify-self: end;
 }
 
+.wmp-auto-tag-rules {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 18px;
+}
+
+.wmp-auto-tag-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.wmp-auto-tag-list:empty {
+	display: none;
+}
+
+.wmp-auto-tag-row {
+	grid-template-columns: auto minmax(0, 1fr) 56px 56px;
+}
+
+.wmp-auto-tag-row .wmp-chip:not(.wmp-tag-chip) {
+	justify-self: end;
+}
+
+.wmp-auto-tag-status {
+	color: var(--wmp-muted);
+	font-size: 11px;
+}
+
+.wmp-tag-chip {
+	background: color-mix(in srgb, var(--wmp-tag-color) 18%, transparent);
+	color: var(--wmp-tag-color);
+}
+
 .wmp-switch {
 	display: inline-flex;
 	align-items: center;

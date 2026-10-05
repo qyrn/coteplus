@@ -6,7 +6,7 @@ L'extension remplace kzfamily : elle couvre toutes ses fonctions autorisées, et
 
 ## Principe
 
-L'extension lit, range et affiche. Elle ne joue jamais à la place du joueur.
+L'extension lit, range et affiche. Elle ne joue jamais à la place du joueur. Sa seule écriture : les étiquettes de la collection, posées uniquement quand le joueur clique « Appliquer » après avoir vu le détail.
 
 Exclu pour de bon :
 - ouvrir des paquets (un par un, "Tout ouvrir" ou auto) ;
@@ -14,7 +14,8 @@ Exclu pour de bon :
 - miser, mettre en vente, défausser ;
 - créer, accepter, refuser un échange, ou pré-remplir un formulaire du site ;
 - remplacer `fetch` ou `XMLHttpRequest` dans la page ;
-- appeler Supabase directement ;
+- appeler Supabase directement, sauf pour le classement auto (lecture de la collection et des étiquettes, pose et retrait des étiquettes qu'il gère) ;
+- conserver ou transmettre la session du joueur : elle est lue dans le cookie au moment du clic, puis oubliée ;
 - injecter un lien sponsorisé.
 
 ## Limite anti-automatisation du site
@@ -41,6 +42,7 @@ Règles qui en découlent :
 Ordre de préférence :
 1. Ce qui est affiché dans le DOM.
 2. Une requête `GET` de l'extension vers l'API du site, avec la session du joueur, déclenchée par une action du joueur ou par l'affichage d'une page.
+3. Pour le classement auto seulement : l'API REST Supabase du site, avec la clé publique trouvée dans ses scripts et la session lue dans le cookie `sb-<projet>-auth-token`. La collection entière se lit en 4 requêtes de 1 000 lignes envoyées ensemble, au lieu de 77 pages de l'API du site. Les écritures partent par lots de 500 ajouts ou 100 retraits.
 
 Toutes les requêtes passent par une seule file :
 - 2 requêtes en parallèle au maximum ;
@@ -78,7 +80,7 @@ Le DOM ne contient aucun id de carte. Le lien entre une carte affichée et ses d
 ### Lot 3 : marché et enchères
 
 - Étoile "Suivre" sur le marché, suivi automatique des enchères où le joueur a misé
-- Popup "Mes enchères suivies" triée par fin
+- Popup "Mes enchères suivies" triée par fin. Une enchère terminée disparaît du popup sauf si elle est gagnée (ou encore en tête, le temps que le site confirme)
 - Rappel 5 min avant la fin par défaut, pas de délai sous 1 min
 - Zéro requête : heure de fin lue dans le DOM
 - Souhait vers enchères : quand le joueur ajoute une carte à sa liste de souhaits (bouton "Ajouter à la liste de souhaits"), l'extension attend que le site confirme l'ajout (le bouton passe à "Retirer de la liste de souhaits"), puis ouvre `/marketplace` avec un panneau listant les enchères en cours de cette carte. Les enchères dont le prix à payer est le plus bas par rapport au prix moyen de leur rareté sont encadrées. Si aucune enchère n'existe, le panneau le dit. Réglage pour désactiver la redirection
@@ -94,6 +96,7 @@ Le DOM ne contient aucun id de carte. Le lien entre une carte affichée et ses d
 - Valeur de la collection dans le temps : total et détail par rareté enregistrés à chaque synchro, courbe dans le popup
 - Garde-fou avant défausse : avertissement si la carte est le dernier exemplaire, en favori, ou vaut nettement plus aux enchères que le wikibidou rendu. Le joueur confirme ou annule lui-même
 - "Meilleures ventes" : cartes de la collection classées par prix moyen déjà en cache (aucun chargement en masse), avec le nombre de ventes récentes (liquidité), le nombre d'exemplaires et un repère "doublon" pour vendre sans perdre la carte. Aucun bouton de mise en vente : le joueur vend depuis le site
+- Classement auto en étiquettes, depuis un panneau de `/collection` : #Doublon sur tous les exemplaires d'une carte possédée plusieurs fois, #À vendre au-dessus d'une cote réglable (100 W par défaut, jamais sur un favori, rien si la cote n'est pas en cache), et un groupe par catégorie Wikipédia (#Personnes, #Lieux, #Œuvres, #Nature, #Espace, #Sport, #Homonymie). Aperçu obligatoire avant d'appliquer. Seules ces étiquettes sont ajoutées ou retirées, celles du joueur ne sont jamais touchées. Pas d'étiquette par rareté : le site trie et filtre déjà par rareté
 
 ### Lot 5 : échanges
 

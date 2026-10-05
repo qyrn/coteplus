@@ -6,7 +6,8 @@ export default defineConfig({
 	manifestVersion: 3,
 	manifest: ({ browser }) => ({
 		name: "Cote+",
-		description: "Prix moyens et outils de collection pour WikiMasters (extension non officielle), en lecture seule.",
+		description:
+			"Cote des cartes, suivi des enchères et outils de collection pour WikiMasters (extension non officielle).",
 		host_permissions: ["https://www.wiki-masters.com/*"],
 		permissions: ["storage", "alarms", "notifications"],
 		action: { default_title: "Cote+" },

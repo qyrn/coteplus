@@ -18,6 +18,7 @@ export class SupabaseSessionError extends Error {
 }
 
 const PAGE_SIZE = 1000;
+const PAGES_PER_WAVE = 4;
 const MIN_SESSION_LIFETIME_MS = 60 * 1000;
 
 export async function connectSupabase(): Promise<SupabaseRest> {
@@ -50,10 +51,15 @@ export async function connectSupabase(): Promise<SupabaseRest> {
 		userId: session.userId,
 		async getAll(path) {
 			const rows: unknown[] = [];
-			for (let from = 0; ; from += PAGE_SIZE) {
-				const page = await readRows(await send(path, { headers: { Range: `${from}-${from + PAGE_SIZE - 1}` } }));
-				rows.push(...page);
-				if (page.length < PAGE_SIZE) return rows;
+			for (let firstPage = 0; ; firstPage += PAGES_PER_WAVE) {
+				const wave = await Promise.all(
+					Array.from({ length: PAGES_PER_WAVE }, async (_, offset) => {
+						const from = (firstPage + offset) * PAGE_SIZE;
+						return readRows(await send(path, { headers: { Range: `${from}-${from + PAGE_SIZE - 1}` } }));
+					}),
+				);
+				for (const page of wave) rows.push(...page);
+				if (wave.some((page) => page.length < PAGE_SIZE)) return rows;
 			}
 		},
 		async insert(table, rows, options = {}) {

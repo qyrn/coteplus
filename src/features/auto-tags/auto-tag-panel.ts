@@ -6,6 +6,7 @@ import { createButton } from "../../lib/ui/button";
 import { createPanel, note } from "../../lib/ui/panel";
 import { collectionExtrasSlot } from "../collection/collection-extras-slot";
 import type { PriceService } from "../prices/price-service";
+import type { PriceStats } from "../prices/price-summary";
 import type { LiveSettings } from "../settings/live-settings";
 import { countLinkChanges, planAutoTags, type TagChange } from "./auto-tag-plan";
 import { AUTO_TAG_RULE_IDS, type AutoTagRuleId, createAutoTagRules } from "./auto-tag-rules";
@@ -135,7 +136,9 @@ export function startAutoTagPanel(
 		try {
 			const snapshot = await loadTagSnapshot(await connectSupabase());
 			const cards = [...new Map(snapshot.copies.map((copy) => [copy.cardId, copy])).values()];
-			const stats = await priceService.cachedPriceStats(cards);
+			const stats = ruleIds.includes("forSale")
+				? await priceService.cachedPriceStats(cards)
+				: new Map<string, PriceStats>();
 			const rules = createAutoTagRules(
 				snapshot.copies,
 				(copy) => stats.get(copy.cardId)?.value ?? null,

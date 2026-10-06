@@ -3,6 +3,8 @@ import { countLinkChanges, planAutoTags } from "./auto-tag-plan";
 import { type CollectionCopy, createAutoTagRules } from "./auto-tag-rules";
 
 const THRESHOLDS = { forSaleMinCote: 50, discardMaxCote: 20 };
+const DUPLICATE_SPEC = { name: "Doublon", color: "#38bdf8" };
+const DUPLICATE = { id: "dup", ...DUPLICATE_SPEC };
 
 function copy(overrides: Partial<CollectionCopy>): CollectionCopy {
 	return {
@@ -17,90 +19,72 @@ function copy(overrides: Partial<CollectionCopy>): CollectionCopy {
 }
 
 describe("planAutoTags", () => {
-	it("tags every copy of a duplicated card and drops the tag once it is unique", () => {
+	it("creates missing tags and tags every copy of a duplicated card", () => {
+		const copies = [copy({ userCardId: "a1", cardId: "a" }), copy({ userCardId: "a2", cardId: "a" })];
+		const rules = createAutoTagRules(copies, () => null, THRESHOLDS);
+		const { changes } = planAutoTags(copies, [rules.duplicates], []);
+		expect(changes).toEqual([{ tag: { name: "Doublon", color: "#38bdf8" }, tagId: null, additions: ["a1", "a2"] }]);
+	});
+
+	it("leaves alone every copy that already carries an auto tag", () => {
 		const copies = [
-			copy({ userCardId: "a1", cardId: "a" }),
-			copy({ userCardId: "a2", cardId: "a", tagIds: ["dup"] }),
-			copy({ userCardId: "b1", cardId: "b", tagIds: ["dup"] }),
+			copy({ userCardId: "done", cardId: "a", tagIds: ["dup"] }),
+			copy({ userCardId: "new", cardId: "a" }),
+			copy({ userCardId: "cheap", cardId: "c", tagIds: ["dup"] }),
 		];
-		const rules = createAutoTagRules(copies, () => null, THRESHOLDS);
-		const { changes } = planAutoTags(copies, [rules.duplicates], [{ id: "dup", name: "doublon", color: "#38bdf8" }]);
-		expect(changes[0]).toMatchObject({ tagId: "dup", additions: ["a1"], removals: ["b1"] });
+		const cotes = new Map([["c", 5]]);
+		const rules = createAutoTagRules(copies, (entry) => cotes.get(entry.cardId) ?? null, THRESHOLDS);
+		const plan = planAutoTags(copies, [rules.duplicates, rules.discard], [DUPLICATE]);
+		expect(plan.freshCopyCount).toBe(1);
+		expect(plan.changes).toEqual([{ tag: DUPLICATE_SPEC, tagId: "dup", additions: ["new"] }]);
 	});
 
-	it("creates missing tags with only additions", () => {
-		const copies = [copy({ userCardId: "x", category: "espèce de plantes" })];
+	it("still sorts copies whose only auto tag is a retired one, and retires it", () => {
+		const old = { id: "old", name: "Personnes", color: "#f472b6" };
+		const copies = [copy({ userCardId: "a", category: "actrice française", tagIds: ["old", "dup"] })];
 		const rules = createAutoTagRules(copies, () => null, THRESHOLDS);
-		const { changes } = planAutoTags(copies, [rules.category], []);
-		expect(changes).toEqual([
-			{ tag: { name: "Plantes & champignons", color: "#4ade80" }, tagId: null, additions: ["x"], removals: [] },
-		]);
+		const plan = planAutoTags(copies, [rules.category], [old, DUPLICATE]);
+		expect(plan.retiredTags).toEqual([old]);
+		expect(plan.changes.map((change) => change.tag.name)).toEqual(["Acteurs & actrices"]);
 	});
 
-	it("leaves the sale tag alone when the cote is unknown and skips starred copies", () => {
+	it("tags sale and discard by cote, never favorites or unknown cotes", () => {
 		const copies = [
-			copy({ userCardId: "unknown", cardId: "u", tagIds: ["sale"] }),
-			copy({ userCardId: "cheap", cardId: "c", tagIds: ["sale"] }),
+			copy({ userCardId: "unknown", cardId: "u" }),
+			copy({ userCardId: "cheap", cardId: "c" }),
+			copy({ userCardId: "middle", cardId: "m" }),
 			copy({ userCardId: "pricey", cardId: "p" }),
-			copy({ userCardId: "kept", cardId: "k", starred: true, tagIds: ["sale"] }),
+			copy({ userCardId: "loved", cardId: "k", starred: true }),
 		];
 		const cotes = new Map([
-			["c", 10],
+			["c", 5],
+			["m", 30],
 			["p", 80],
 			["k", 500],
 		]);
 		const rules = createAutoTagRules(copies, (entry) => cotes.get(entry.cardId) ?? null, THRESHOLDS);
-		const { changes } = planAutoTags(copies, [rules.forSale], [{ id: "sale", name: "À vendre", color: "#22c55e" }]);
-		expect(changes[0]).toMatchObject({ additions: ["pricey"], removals: ["cheap", "kept"] });
+		const { changes } = planAutoTags(copies, [rules.forSale, rules.discard], []);
+		expect(changes.map((change) => [change.tag.name, change.additions])).toEqual([
+			["À vendre", ["pricey"]],
+			["À défausser", ["cheap"]],
+		]);
 	});
 
-	it("marks cards under the discard cote, never favorites", () => {
-		const copies = [
-			copy({ userCardId: "cheap", cardId: "c" }),
-			copy({ userCardId: "limit", cardId: "l" }),
-			copy({ userCardId: "loved", cardId: "c", starred: true }),
-			copy({ userCardId: "unknown", cardId: "u" }),
-		];
-		const cotes = new Map([
-			["c", 5],
-			["l", 20],
-		]);
-		const rules = createAutoTagRules(copies, (entry) => cotes.get(entry.cardId) ?? null, THRESHOLDS);
-		const { changes } = planAutoTags(copies, [rules.discard], []);
-		expect(changes).toEqual([
-			{ tag: { name: "À défausser", color: "#f87171" }, tagId: null, additions: ["cheap"], removals: [] },
+	it("gives every copy a category, falling back to Divers", () => {
+		const copies = [copy({ userCardId: "x", category: "" }), copy({ userCardId: "y", category: "espèce de plantes" })];
+		const rules = createAutoTagRules(copies, () => null, THRESHOLDS);
+		const { changes } = planAutoTags(copies, [rules.category], []);
+		expect(changes.map((change) => [change.tag.name, change.additions])).toEqual([
+			["Plantes & champignons", ["y"]],
+			["Divers", ["x"]],
 		]);
 	});
 
 	it("never touches a tag the player created under the same name", () => {
-		const copies = [
-			copy({ userCardId: "a1", cardId: "a" }),
-			copy({ userCardId: "a2", cardId: "a" }),
-			copy({ userCardId: "b1", cardId: "b", tagIds: ["mine"] }),
-		];
+		const copies = [copy({ userCardId: "a1", cardId: "a" }), copy({ userCardId: "a2", cardId: "a" })];
 		const rules = createAutoTagRules(copies, () => null, THRESHOLDS);
 		const plan = planAutoTags(copies, [rules.duplicates], [{ id: "mine", name: "Doublon", color: "#f472b6" }]);
-		expect(plan.changes).toEqual([]);
-		expect(plan.userOwnedTags).toEqual([{ name: "Doublon", color: "#38bdf8" }]);
-	});
-
-	it("puts each copy in its category group and reports nothing when already sorted", () => {
-		const copies = [copy({ userCardId: "a", category: "actrice française", tagIds: ["actors"] })];
-		const rules = createAutoTagRules(copies, () => null, THRESHOLDS);
-		const { changes } = planAutoTags(
-			copies,
-			[rules.category],
-			[{ id: "actors", name: "Acteurs & actrices", color: "#F472B6" }],
-		);
-		expect(countLinkChanges(changes)).toBe(0);
-	});
-
-	it("retires the old broad category tags the extension created, never the player's", () => {
-		const copies = [copy({ userCardId: "a", category: "actrice française", tagIds: ["old", "mine"] })];
-		const rules = createAutoTagRules(copies, () => null, THRESHOLDS);
-		const old = { id: "old", name: "Personnes", color: "#f472b6" };
-		const mine = { id: "mine", name: "Lieux", color: "#60a5fa" };
-		const { retiredTags } = planAutoTags(copies, [rules.category], [old, mine]);
-		expect(retiredTags).toEqual([old]);
+		expect(countLinkChanges(plan.changes)).toBe(0);
+		expect(plan.userOwnedTags).toEqual([DUPLICATE_SPEC]);
 	});
 });

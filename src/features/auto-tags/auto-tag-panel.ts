@@ -12,6 +12,7 @@ import type { Settings } from "../settings/settings";
 import { countLinkChanges, planAutoTags, type TagChange } from "./auto-tag-plan";
 import {
 	AUTO_TAG_RULE_IDS,
+	AUTO_TAGS,
 	type AutoTagRuleId,
 	COTE_RULE_IDS,
 	type CollectionCopy,
@@ -62,7 +63,7 @@ function taggedCopyCount(copies: readonly CollectionCopy[], tag: ExistingTag): n
 }
 
 function changeRow(change: TagChange): HTMLLIElement {
-	return previewRow(change.tag, change.tagId ? "" : "nouvelle", change.additions.length, change.removals.length);
+	return previewRow(change.tag, change.tagId ? "" : "nouvelle", change.additions.length, 0);
 }
 
 function userOwnedRow(tag: TagSpec): HTMLLIElement {
@@ -191,8 +192,9 @@ export function startAutoTagPanel(
 		const total = countLinkChanges(plan.changes) + plan.retiredTags.length;
 		meta.textContent = total > 0 ? `${formatAmount(total)} changements` : "";
 		applyButton.hidden = total === 0;
+		const freshNote = ` ${formatAmount(plan.freshCopyCount)} cartes pas encore classées par l'extension : les cartes qui ont déjà une étiquette auto ne bougent plus.`;
 		const coteNote = usesCote
-			? ` Cote connue pour ${formatAmount(stats.size)} cartes sur ${formatAmount(cards.length)} : les autres ne bougent pas pour #À vendre et #À défausser, et les favoris n'en reçoivent jamais.`
+			? ` Cote connue pour ${formatAmount(stats.size)} cartes sur ${formatAmount(cards.length)} : sans cote, ni #À vendre ni #À défausser, et jamais sur un favori.`
 			: "";
 		const userOwnedNote =
 			plan.userOwnedTags.length > 0
@@ -200,7 +202,7 @@ export function startAutoTagPanel(
 				: "";
 		const lead =
 			total === 0 ? "Tout est déjà classé." : "Rien n'est modifié tant que tu ne cliques pas sur « Appliquer ».";
-		status.textContent = `${lead}${coteNote}${userOwnedNote}`;
+		status.textContent = `${lead}${freshNote}${coteNote}${userOwnedNote}`;
 	}
 
 	async function apply(): Promise<void> {
@@ -226,7 +228,7 @@ export function startAutoTagPanel(
 		resetPreview();
 		status.textContent = "Lecture de tes étiquettes...";
 		const snapshot = await loadTagSnapshot(await connectSupabase());
-		const tags = extensionTags(snapshot.tags);
+		const tags = extensionTags(snapshot.tags, AUTO_TAGS);
 		pendingDeletion = tags;
 		list.replaceChildren(...tags.map((tag) => previewRow(tag, "supprimée", 0, taggedCopyCount(snapshot.copies, tag))));
 		meta.textContent = tags.length > 0 ? `${formatAmount(tags.length)} étiquettes` : "";

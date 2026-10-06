@@ -11,7 +11,6 @@ export interface TagSnapshot {
 }
 
 const INSERT_CHUNK_SIZE = 500;
-const DELETE_CHUNK_SIZE = 100;
 const LINK_CONFLICT_COLUMNS = "user_card_id,tag_id";
 
 function readTagIds(value: unknown): string[] {
@@ -79,11 +78,6 @@ export async function applyTagChanges(
 		for (const userCardIds of chunk(change.additions, INSERT_CHUNK_SIZE)) {
 			const links = userCardIds.map((userCardId) => ({ user_card_id: userCardId, tag_id: tagId }));
 			await rest.insert("user_card_tags", links, { onConflict: LINK_CONFLICT_COLUMNS });
-			doneLinks += userCardIds.length;
-			onProgress(doneLinks);
-		}
-		for (const userCardIds of chunk(change.removals, DELETE_CHUNK_SIZE)) {
-			await rest.remove(`user_card_tags?tag_id=eq.${tagId}&user_card_id=in.(${userCardIds.join(",")})`);
 			doneLinks += userCardIds.length;
 			onProgress(doneLinks);
 		}

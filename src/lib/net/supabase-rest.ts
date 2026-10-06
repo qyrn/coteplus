@@ -10,7 +10,6 @@ export interface SupabaseRest {
 	userId: string;
 	getAll(path: string): Promise<unknown[]>;
 	insert(table: string, rows: readonly object[], options?: InsertOptions): Promise<unknown[]>;
-	remove(pathWithQuery: string): Promise<void>;
 	rpc(functionName: string, args: object): Promise<void>;
 }
 
@@ -73,9 +72,6 @@ export async function connectSupabase(): Promise<SupabaseRest> {
 				body: JSON.stringify(rows),
 			});
 			return options.returnRows ? readRows(response) : [];
-		},
-		async remove(pathWithQuery) {
-			await send(pathWithQuery, { method: "DELETE", headers: { Prefer: "return=minimal" } });
 		},
 		async rpc(functionName, args) {
 			await send(`rpc/${functionName}`, {

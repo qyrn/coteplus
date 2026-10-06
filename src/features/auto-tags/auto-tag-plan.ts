@@ -1,17 +1,35 @@
-import type { AutoTagRule, CollectionCopy, TagSpec } from "./auto-tag-rules";
-import { type ExistingTag, isExtensionTag, tagKey } from "./tag-ownership";
+import {
+	ACTIVE_AUTO_TAGS,
+	type AutoTagRule,
+	type CollectionCopy,
+	RETIRED_AUTO_TAGS,
+	type TagSpec,
+} from "./auto-tag-rules";
+import { type ExistingTag, extensionTags, isExtensionTag, tagKey } from "./tag-ownership";
 
 export interface TagChange {
 	tag: TagSpec;
 	tagId: string | null;
 	additions: string[];
-	removals: string[];
 }
 
 export interface AutoTagPlan {
 	changes: TagChange[];
 	userOwnedTags: TagSpec[];
 	retiredTags: ExistingTag[];
+	freshCopyCount: number;
+}
+
+function tagIdSet(tags: readonly ExistingTag[]): Set<string> {
+	return new Set(tags.map((tag) => tag.id));
+}
+
+function freshCopiesOf(copies: readonly CollectionCopy[], existingTags: readonly ExistingTag[]): CollectionCopy[] {
+	const activeIds = tagIdSet(extensionTags(existingTags, ACTIVE_AUTO_TAGS));
+	const retiredIds = tagIdSet(extensionTags(existingTags, RETIRED_AUTO_TAGS));
+	return copies.filter(
+		(copy) => copy.tagIds.some((id) => retiredIds.has(id)) || !copy.tagIds.some((id) => activeIds.has(id)),
+	);
 }
 
 export function planAutoTags(
@@ -20,13 +38,15 @@ export function planAutoTags(
 	existingTags: readonly ExistingTag[],
 ): AutoTagPlan {
 	const existingByKey = new Map(existingTags.map((tag) => [tagKey(tag.name), tag]));
-	const plan: AutoTagPlan = { changes: [], userOwnedTags: [], retiredTags: [] };
+	const freshCopies = freshCopiesOf(copies, existingTags);
+	const plan: AutoTagPlan = {
+		changes: [],
+		userOwnedTags: [],
+		retiredTags: extensionTags(existingTags, RETIRED_AUTO_TAGS),
+		freshCopyCount: freshCopies.length,
+	};
 	for (const rule of rules) {
-		for (const tag of rule.retiredTags) {
-			const existing = existingByKey.get(tagKey(tag.name));
-			if (existing && isExtensionTag(existing, tag)) plan.retiredTags.push(existing);
-		}
-		const wantedByCopy = new Map(copies.map((copy) => [copy.userCardId, rule.wantedTags(copy)]));
+		const wantedByCopy = new Map(freshCopies.map((copy) => [copy.userCardId, rule.wantedTags(copy)]));
 		for (const tag of rule.tags) {
 			const existing = existingByKey.get(tagKey(tag.name));
 			if (existing && !isExtensionTag(existing, tag)) {
@@ -34,22 +54,16 @@ export function planAutoTags(
 				continue;
 			}
 			const tagId = existing?.id ?? null;
-			const additions: string[] = [];
-			const removals: string[] = [];
-			for (const copy of copies) {
-				const wanted = wantedByCopy.get(copy.userCardId);
-				if (!wanted) continue;
-				const isTagged = tagId !== null && copy.tagIds.includes(tagId);
-				const isWanted = wanted.includes(tag.name);
-				if (isWanted && !isTagged) additions.push(copy.userCardId);
-				if (!isWanted && isTagged) removals.push(copy.userCardId);
-			}
-			if (additions.length > 0 || removals.length > 0) plan.changes.push({ tag, tagId, additions, removals });
+			const additions = freshCopies
+				.filter((copy) => wantedByCopy.get(copy.userCardId)?.includes(tag.name))
+				.filter((copy) => tagId === null || !copy.tagIds.includes(tagId))
+				.map((copy) => copy.userCardId);
+			if (additions.length > 0) plan.changes.push({ tag, tagId, additions });
 		}
 	}
 	return plan;
 }
 
 export function countLinkChanges(changes: readonly TagChange[]): number {
-	return changes.reduce((total, change) => total + change.additions.length + change.removals.length, 0);
+	return changes.reduce((total, change) => total + change.additions.length, 0);
 }

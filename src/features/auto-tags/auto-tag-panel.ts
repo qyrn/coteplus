@@ -27,7 +27,7 @@ const PANEL_ID = "wmp-auto-tags";
 
 function ruleLabel(id: AutoTagRuleId, settings: Settings): string {
 	if (id === "forSale") return `À vendre (cote ≥ ${formatAmount(settings.autoTagForSaleMinCote)} W)`;
-	if (id === "discard") return `À défausser (cote < ${formatAmount(settings.autoTagDiscardMaxCote)} W)`;
+	if (id === "discard") return `À défausser (C et PC, cote < ${formatAmount(settings.autoTagDiscardMaxCote)} W)`;
 	return id === "duplicates" ? "Doublons" : "Catégories";
 }
 

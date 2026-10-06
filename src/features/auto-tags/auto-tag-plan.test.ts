@@ -52,12 +52,16 @@ describe("planAutoTags", () => {
 		const copies = [
 			copy({ userCardId: "unknown", cardId: "u" }),
 			copy({ userCardId: "cheap", cardId: "c" }),
+			copy({ userCardId: "cheapCommon", cardId: "pc", rarity: "PC" }),
+			copy({ userCardId: "cheapRare", cardId: "r", rarity: "R" }),
 			copy({ userCardId: "middle", cardId: "m" }),
 			copy({ userCardId: "pricey", cardId: "p" }),
 			copy({ userCardId: "loved", cardId: "k", starred: true }),
 		];
 		const cotes = new Map([
 			["c", 5],
+			["pc", 5],
+			["r", 5],
 			["m", 30],
 			["p", 80],
 			["k", 500],
@@ -66,7 +70,7 @@ describe("planAutoTags", () => {
 		const { changes } = planAutoTags(copies, [rules.forSale, rules.discard], []);
 		expect(changes.map((change) => [change.tag.name, change.additions])).toEqual([
 			["À vendre", ["pricey"]],
-			["À défausser", ["cheap"]],
+			["À défausser", ["cheap", "cheapCommon"]],
 		]);
 	});
 

@@ -32,6 +32,8 @@ export const AUTO_TAG_RULE_IDS: readonly AutoTagRuleId[] = ["duplicates", "forSa
 
 export const COTE_RULE_IDS: readonly AutoTagRuleId[] = ["forSale", "discard"];
 
+const DISCARDABLE_RARITIES: ReadonlySet<Rarity> = new Set(["C", "PC"]);
+
 const DUPLICATE_TAG: TagSpec = { name: "Doublon", color: "#38bdf8" };
 const FOR_SALE_TAG: TagSpec = { name: "À vendre", color: "#22c55e" };
 const DISCARD_TAG: TagSpec = { name: "À défausser", color: "#f87171" };
@@ -60,7 +62,7 @@ function coteRule(
 	id: AutoTagRuleId,
 	tag: TagSpec,
 	coteOf: (copy: CollectionCopy) => number | null,
-	matches: (cote: number) => boolean,
+	matches: (cote: number, copy: CollectionCopy) => boolean,
 ): AutoTagRule {
 	return {
 		id,
@@ -68,7 +70,7 @@ function coteRule(
 		wantedTags: (copy) => {
 			if (copy.starred) return [];
 			const cote = coteOf(copy);
-			return cote !== null && matches(cote) ? [tag.name] : [];
+			return cote !== null && matches(cote, copy) ? [tag.name] : [];
 		},
 	};
 }
@@ -86,7 +88,12 @@ export function createAutoTagRules(
 			wantedTags: (copy) => ((copiesByCard.get(copy.cardId) ?? 0) > 1 ? [DUPLICATE_TAG.name] : []),
 		},
 		forSale: coteRule("forSale", FOR_SALE_TAG, coteOf, (cote) => cote >= forSaleMinCote),
-		discard: coteRule("discard", DISCARD_TAG, coteOf, (cote) => cote < discardMaxCote),
+		discard: coteRule(
+			"discard",
+			DISCARD_TAG,
+			coteOf,
+			(cote, copy) => cote < discardMaxCote && DISCARDABLE_RARITIES.has(copy.rarity),
+		),
 		category: {
 			id: "category",
 			tags: CATEGORY_TAGS,

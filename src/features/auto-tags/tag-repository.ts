@@ -1,8 +1,9 @@
 import { isRecord } from "../../lib/json";
 import type { SupabaseRest } from "../../lib/net/supabase-rest";
 import { isRarity } from "../../lib/site/rarity";
-import type { ExistingTag, TagChange } from "./auto-tag-plan";
+import type { TagChange } from "./auto-tag-plan";
 import type { CollectionCopy } from "./auto-tag-rules";
+import type { ExistingTag } from "./tag-ownership";
 
 export interface TagSnapshot {
 	copies: CollectionCopy[];
@@ -37,7 +38,7 @@ function readCopy(row: unknown): CollectionCopy | null {
 
 function readTag(row: unknown): ExistingTag | null {
 	if (!isRecord(row) || typeof row.id !== "string" || typeof row.name !== "string") return null;
-	return { id: row.id, name: row.name };
+	return { id: row.id, name: row.name, color: typeof row.color === "string" ? row.color : "" };
 }
 
 export async function loadTagSnapshot(rest: SupabaseRest): Promise<TagSnapshot> {
@@ -46,7 +47,7 @@ export async function loadTagSnapshot(rest: SupabaseRest): Promise<TagSnapshot> 
 		rest.getAll(
 			`user_cards?select=id,card_id,starred,card:cards(rarity,category),user_card_tags(tag_id)&${owner}&order=id`,
 		),
-		rest.getAll(`tags?select=id,name&${owner}&order=name`),
+		rest.getAll(`tags?select=id,name,color&${owner}&order=name`),
 	]);
 	return {
 		copies: copyRows.map(readCopy).filter((copy): copy is CollectionCopy => copy !== null),
@@ -86,5 +87,16 @@ export async function applyTagChanges(
 			doneLinks += userCardIds.length;
 			onProgress(doneLinks);
 		}
+	}
+}
+
+export async function deleteTags(
+	rest: SupabaseRest,
+	tags: readonly ExistingTag[],
+	onProgress: (doneTags: number) => void,
+): Promise<void> {
+	for (const [index, tag] of tags.entries()) {
+		await rest.rpc("delete_tag", { p_tag_id: tag.id });
+		onProgress(index + 1);
 	}
 }

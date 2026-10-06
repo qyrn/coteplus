@@ -11,6 +11,7 @@ export function readEnabledRules(value: unknown): EnabledRules {
 	return {
 		duplicates: stored.duplicates !== false,
 		forSale: stored.forSale !== false,
+		discard: stored.discard !== false,
 		category: stored.category !== false,
 	};
 }

@@ -15,7 +15,7 @@ export interface TagSpec {
 	color: string;
 }
 
-export type AutoTagRuleId = "duplicates" | "forSale" | "category";
+export type AutoTagRuleId = "duplicates" | "forSale" | "discard" | "category";
 
 export interface AutoTagRule {
 	id: AutoTagRuleId;
@@ -23,10 +23,21 @@ export interface AutoTagRule {
 	wantedTags(copy: CollectionCopy): readonly string[] | null;
 }
 
-export const AUTO_TAG_RULE_IDS: readonly AutoTagRuleId[] = ["duplicates", "forSale", "category"];
+export interface CoteThresholds {
+	forSaleMinCote: number;
+	discardMaxCote: number;
+}
+
+export const AUTO_TAG_RULE_IDS: readonly AutoTagRuleId[] = ["duplicates", "forSale", "discard", "category"];
+
+export const COTE_RULE_IDS: readonly AutoTagRuleId[] = ["forSale", "discard"];
 
 const DUPLICATE_TAG: TagSpec = { name: "Doublon", color: "#38bdf8" };
 const FOR_SALE_TAG: TagSpec = { name: "À vendre", color: "#22c55e" };
+const DISCARD_TAG: TagSpec = { name: "À défausser", color: "#f87171" };
+const CATEGORY_TAGS: readonly TagSpec[] = CATEGORY_GROUPS.map(({ name, color }) => ({ name, color }));
+
+export const AUTO_TAGS: readonly TagSpec[] = [DUPLICATE_TAG, FOR_SALE_TAG, DISCARD_TAG, ...CATEGORY_TAGS];
 
 function countCopiesByCard(copies: readonly CollectionCopy[]): Map<string, number> {
 	const counts = new Map<string, number>();
@@ -34,10 +45,28 @@ function countCopiesByCard(copies: readonly CollectionCopy[]): Map<string, numbe
 	return counts;
 }
 
+function coteRule(
+	id: AutoTagRuleId,
+	tag: TagSpec,
+	coteOf: (copy: CollectionCopy) => number | null,
+	matches: (cote: number) => boolean,
+): AutoTagRule {
+	return {
+		id,
+		tags: [tag],
+		wantedTags: (copy) => {
+			if (copy.starred) return [];
+			const cote = coteOf(copy);
+			if (cote === null) return null;
+			return matches(cote) ? [tag.name] : [];
+		},
+	};
+}
+
 export function createAutoTagRules(
 	copies: readonly CollectionCopy[],
 	coteOf: (copy: CollectionCopy) => number | null,
-	forSaleMinCote: number,
+	{ forSaleMinCote, discardMaxCote }: CoteThresholds,
 ): Record<AutoTagRuleId, AutoTagRule> {
 	const copiesByCard = countCopiesByCard(copies);
 	return {
@@ -46,19 +75,11 @@ export function createAutoTagRules(
 			tags: [DUPLICATE_TAG],
 			wantedTags: (copy) => ((copiesByCard.get(copy.cardId) ?? 0) > 1 ? [DUPLICATE_TAG.name] : []),
 		},
-		forSale: {
-			id: "forSale",
-			tags: [FOR_SALE_TAG],
-			wantedTags: (copy) => {
-				if (copy.starred) return [];
-				const cote = coteOf(copy);
-				if (cote === null) return null;
-				return cote >= forSaleMinCote ? [FOR_SALE_TAG.name] : [];
-			},
-		},
+		forSale: coteRule("forSale", FOR_SALE_TAG, coteOf, (cote) => cote >= forSaleMinCote),
+		discard: coteRule("discard", DISCARD_TAG, coteOf, (cote) => cote < discardMaxCote),
 		category: {
 			id: "category",
-			tags: CATEGORY_GROUPS.map(({ name, color }) => ({ name, color })),
+			tags: CATEGORY_TAGS,
 			wantedTags: (copy) => {
 				const group = categoryGroupOf(copy.category);
 				return group ? [group.name] : [];

@@ -1,9 +1,5 @@
 import type { AutoTagRule, CollectionCopy, TagSpec } from "./auto-tag-rules";
-
-export interface ExistingTag {
-	id: string;
-	name: string;
-}
+import { type ExistingTag, isExtensionTag, tagKey } from "./tag-ownership";
 
 export interface TagChange {
 	tag: TagSpec;
@@ -12,20 +8,27 @@ export interface TagChange {
 	removals: string[];
 }
 
-function tagKey(name: string): string {
-	return name.trim().toLocaleLowerCase("fr");
+export interface AutoTagPlan {
+	changes: TagChange[];
+	userOwnedTags: TagSpec[];
 }
 
 export function planAutoTags(
 	copies: readonly CollectionCopy[],
 	rules: readonly AutoTagRule[],
 	existingTags: readonly ExistingTag[],
-): TagChange[] {
-	const existingByKey = new Map(existingTags.map((tag) => [tagKey(tag.name), tag.id]));
-	return rules.flatMap((rule) => {
+): AutoTagPlan {
+	const existingByKey = new Map(existingTags.map((tag) => [tagKey(tag.name), tag]));
+	const plan: AutoTagPlan = { changes: [], userOwnedTags: [] };
+	for (const rule of rules) {
 		const wantedByCopy = new Map(copies.map((copy) => [copy.userCardId, rule.wantedTags(copy)]));
-		return rule.tags.flatMap((tag): TagChange[] => {
-			const tagId = existingByKey.get(tagKey(tag.name)) ?? null;
+		for (const tag of rule.tags) {
+			const existing = existingByKey.get(tagKey(tag.name));
+			if (existing && !isExtensionTag(existing, tag)) {
+				plan.userOwnedTags.push(tag);
+				continue;
+			}
+			const tagId = existing?.id ?? null;
 			const additions: string[] = [];
 			const removals: string[] = [];
 			for (const copy of copies) {
@@ -36,9 +39,10 @@ export function planAutoTags(
 				if (isWanted && !isTagged) additions.push(copy.userCardId);
 				if (!isWanted && isTagged) removals.push(copy.userCardId);
 			}
-			return additions.length > 0 || removals.length > 0 ? [{ tag, tagId, additions, removals }] : [];
-		});
-	});
+			if (additions.length > 0 || removals.length > 0) plan.changes.push({ tag, tagId, additions, removals });
+		}
+	}
+	return plan;
 }
 
 export function countLinkChanges(changes: readonly TagChange[]): number {

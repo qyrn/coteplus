@@ -8,49 +8,60 @@ import { collectionExtrasSlot } from "../collection/collection-extras-slot";
 import type { PriceService } from "../prices/price-service";
 import type { PriceStats } from "../prices/price-summary";
 import type { LiveSettings } from "../settings/live-settings";
+import type { Settings } from "../settings/settings";
 import { countLinkChanges, planAutoTags, type TagChange } from "./auto-tag-plan";
-import { AUTO_TAG_RULE_IDS, type AutoTagRuleId, createAutoTagRules } from "./auto-tag-rules";
+import {
+	AUTO_TAG_RULE_IDS,
+	type AutoTagRuleId,
+	COTE_RULE_IDS,
+	createAutoTagRules,
+	type TagSpec,
+} from "./auto-tag-rules";
 import { type EnabledRules, enabledRuleIds, enabledRulesItem, readEnabledRules } from "./auto-tag-settings";
-import { applyTagChanges, loadTagSnapshot } from "./tag-repository";
+import { type ExistingTag, extensionTags } from "./tag-ownership";
+import { applyTagChanges, deleteTags, loadTagSnapshot } from "./tag-repository";
 
 const PANEL_ID = "wmp-auto-tags";
 
-function ruleLabel(id: AutoTagRuleId, forSaleMinCote: number): string {
-	if (id === "forSale") return `À vendre (cote ≥ ${formatAmount(forSaleMinCote)} W)`;
+function ruleLabel(id: AutoTagRuleId, settings: Settings): string {
+	if (id === "forSale") return `À vendre (cote ≥ ${formatAmount(settings.autoTagForSaleMinCote)} W)`;
+	if (id === "discard") return `À défausser (cote < ${formatAmount(settings.autoTagDiscardMaxCote)} W)`;
 	return id === "duplicates" ? "Doublons" : "Catégories";
 }
 
-function tagChip(change: TagChange): HTMLSpanElement {
+function tagChip(tag: TagSpec): HTMLSpanElement {
 	const chip = document.createElement("span");
 	chip.className = "wmp-chip wmp-tag-chip";
-	chip.style.setProperty("--wmp-tag-color", change.tag.color);
-	chip.textContent = `#${change.tag.name}`;
+	chip.style.setProperty("--wmp-tag-color", tag.color);
+	chip.textContent = `#${tag.name}`;
 	return chip;
 }
 
-function countChip(text: string, tone: "good" | "bad" | "neutral"): HTMLSpanElement {
+function countChip(count: number, sign: "+" | "−"): HTMLSpanElement {
+	if (count === 0) return document.createElement("span");
 	const chip = document.createElement("span");
 	chip.className = "wmp-chip";
-	chip.dataset.tone = tone;
-	chip.textContent = text;
+	chip.dataset.tone = sign === "+" ? "good" : "bad";
+	chip.textContent = `${sign}${formatAmount(count)}`;
 	return chip;
 }
 
-function changeRow(change: TagChange): HTMLLIElement {
+function previewRow(tag: TagSpec, statusText: string, additions: number, removals: number): HTMLLIElement {
 	const row = document.createElement("li");
 	row.className = "wmp-row wmp-auto-tag-row";
 	const status = document.createElement("span");
 	status.className = "wmp-auto-tag-status";
-	status.textContent = change.tagId ? "" : "nouvelle";
-	const additions = change.additions.length > 0 ? `+${formatAmount(change.additions.length)}` : "";
-	const removals = change.removals.length > 0 ? `−${formatAmount(change.removals.length)}` : "";
-	row.append(
-		tagChip(change),
-		status,
-		additions ? countChip(additions, "good") : document.createElement("span"),
-		removals ? countChip(removals, "bad") : document.createElement("span"),
-	);
+	status.textContent = statusText;
+	row.append(tagChip(tag), status, countChip(additions, "+"), countChip(removals, "−"));
 	return row;
+}
+
+function changeRow(change: TagChange): HTMLLIElement {
+	return previewRow(change.tag, change.tagId ? "" : "nouvelle", change.additions.length, change.removals.length);
+}
+
+function userOwnedRow(tag: TagSpec): HTMLLIElement {
+	return previewRow(tag, "la tienne, pas touchée", 0, 0);
 }
 
 function errorMessage(error: unknown): string {
@@ -58,7 +69,7 @@ function errorMessage(error: unknown): string {
 		return "Ta session sur le site n'a pas pu être lue. Recharge la page puis réessaie.";
 	}
 	const detail = error instanceof Error ? ` (${error.message})` : "";
-	return `Le site a refusé la demande${detail}. Une partie a pu être appliquée : relance « Préparer » pour voir ce qui reste.`;
+	return `Le site a refusé la demande${detail}. Une partie a pu être appliquée : relance l'aperçu pour voir ce qui reste.`;
 }
 
 export function startAutoTagPanel(
@@ -86,30 +97,36 @@ export function startAutoTagPanel(
 	}
 	const prepareButton = createButton("Préparer", "soft", "tag");
 	const applyButton = createButton("Appliquer", "soft");
+	const prepareDeletionButton = createButton("Supprimer les étiquettes auto", "ghost");
+	const confirmDeletionButton = createButton("Confirmer la suppression", "soft");
 	const reloadButton = createButton("Recharger la page", "ghost");
+	const actionButtons = [prepareButton, applyButton, prepareDeletionButton, confirmDeletionButton];
 	const actions = document.createElement("div");
 	actions.className = "wmp-auto-tag-actions";
-	actions.append(prepareButton, applyButton, reloadButton);
+	actions.append(...actionButtons, reloadButton);
 	const list = document.createElement("ul");
 	list.className = "wmp-rows wmp-auto-tag-list";
 	const status = note(
-		"Pose tes étiquettes toute seule selon les règles cochées. Tu vois le détail avant que quoi que ce soit change.",
+		"Pose tes étiquettes toute seule selon les règles cochées. Tu vois le détail avant que quoi que ce soit change. Tes propres étiquettes ne sont jamais touchées.",
 	);
 	body.append(switches, actions, list, status);
 
 	let pendingChanges: TagChange[] = [];
+	let pendingDeletion: ExistingTag[] = [];
 
 	function resetPreview(): void {
 		pendingChanges = [];
+		pendingDeletion = [];
 		list.replaceChildren();
 		meta.textContent = "";
 		applyButton.hidden = true;
+		confirmDeletionButton.hidden = true;
 		reloadButton.hidden = true;
 	}
 
 	function refreshLabels(): void {
-		const { autoTagForSaleMinCote } = settings.current();
-		for (const [id, text] of labelTexts) text.textContent = ruleLabel(id, autoTagForSaleMinCote);
+		const current = settings.current();
+		for (const [id, text] of labelTexts) text.textContent = ruleLabel(id, current);
 	}
 
 	function currentRules(): EnabledRules {
@@ -117,74 +134,101 @@ export function startAutoTagPanel(
 	}
 
 	function setBusy(isBusy: boolean): void {
-		prepareButton.disabled = isBusy;
-		applyButton.disabled = isBusy;
+		for (const button of actionButtons) button.disabled = isBusy;
 		for (const input of inputs.values()) input.disabled = isBusy;
+	}
+
+	async function runBusy(task: () => Promise<void>): Promise<void> {
+		setBusy(true);
+		try {
+			await task();
+		} catch (error) {
+			status.textContent = errorMessage(error);
+		} finally {
+			setBusy(false);
+		}
 	}
 
 	async function prepare(): Promise<void> {
 		resetPreview();
 		refreshLabels();
-		const { autoTagForSaleMinCote } = settings.current();
+		const { autoTagForSaleMinCote, autoTagDiscardMaxCote } = settings.current();
 		const ruleIds = enabledRuleIds(currentRules());
 		if (ruleIds.length === 0) {
 			status.textContent = "Coche au moins une règle.";
 			return;
 		}
-		setBusy(true);
 		status.textContent = "Lecture de ta collection et de tes étiquettes...";
-		try {
-			const snapshot = await loadTagSnapshot(await connectSupabase());
-			const cards = [...new Map(snapshot.copies.map((copy) => [copy.cardId, copy])).values()];
-			const stats = ruleIds.includes("forSale")
-				? await priceService.cachedPriceStats(cards)
-				: new Map<string, PriceStats>();
-			const rules = createAutoTagRules(
-				snapshot.copies,
-				(copy) => stats.get(copy.cardId)?.value ?? null,
-				autoTagForSaleMinCote,
-			);
-			pendingChanges = planAutoTags(
-				snapshot.copies,
-				ruleIds.map((id) => rules[id]),
-				snapshot.tags,
-			);
-			list.replaceChildren(...pendingChanges.map(changeRow));
-			const total = countLinkChanges(pendingChanges);
-			meta.textContent = total > 0 ? `${formatAmount(total)} changements` : "";
-			applyButton.hidden = total === 0;
-			const saleNote = ruleIds.includes("forSale")
-				? ` Cote connue pour ${formatAmount(stats.size)} cartes sur ${formatAmount(cards.length)} : les autres ne bougent pas pour #À vendre, et les favoris ne sont jamais proposés.`
+		const snapshot = await loadTagSnapshot(await connectSupabase());
+		const cards = [...new Map(snapshot.copies.map((copy) => [copy.cardId, copy])).values()];
+		const usesCote = ruleIds.some((id) => COTE_RULE_IDS.includes(id));
+		const stats = usesCote ? await priceService.cachedPriceStats(cards) : new Map<string, PriceStats>();
+		const rules = createAutoTagRules(snapshot.copies, (copy) => stats.get(copy.cardId)?.value ?? null, {
+			forSaleMinCote: autoTagForSaleMinCote,
+			discardMaxCote: autoTagDiscardMaxCote,
+		});
+		const plan = planAutoTags(
+			snapshot.copies,
+			ruleIds.map((id) => rules[id]),
+			snapshot.tags,
+		);
+		pendingChanges = plan.changes;
+		list.replaceChildren(...plan.changes.map(changeRow), ...plan.userOwnedTags.map(userOwnedRow));
+		const total = countLinkChanges(plan.changes);
+		meta.textContent = total > 0 ? `${formatAmount(total)} changements` : "";
+		applyButton.hidden = total === 0;
+		const coteNote = usesCote
+			? ` Cote connue pour ${formatAmount(stats.size)} cartes sur ${formatAmount(cards.length)} : les autres ne bougent pas pour #À vendre et #À défausser, et les favoris n'en reçoivent jamais.`
+			: "";
+		const userOwnedNote =
+			plan.userOwnedTags.length > 0
+				? " Tu as déjà une étiquette à toi avec le même nom qu'une étiquette auto : elle reste telle quelle."
 				: "";
-			status.textContent =
-				total === 0
-					? `Tout est déjà classé.${saleNote}`
-					: `Rien n'est modifié tant que tu ne cliques pas sur « Appliquer ».${saleNote}`;
-		} catch (error) {
-			status.textContent = errorMessage(error);
-		} finally {
-			setBusy(false);
-		}
+		const lead =
+			total === 0 ? "Tout est déjà classé." : "Rien n'est modifié tant que tu ne cliques pas sur « Appliquer ».";
+		status.textContent = `${lead}${coteNote}${userOwnedNote}`;
 	}
 
 	async function apply(): Promise<void> {
 		const changes = pendingChanges;
 		const total = countLinkChanges(changes);
-		setBusy(true);
 		status.textContent = `Application : 0 / ${formatAmount(total)}`;
-		try {
-			await applyTagChanges(await connectSupabase(), changes, (done) => {
-				status.textContent = `Application : ${formatAmount(done)} / ${formatAmount(total)}`;
-			});
-			pendingChanges = [];
-			applyButton.hidden = true;
-			reloadButton.hidden = false;
-			status.textContent = "Classement appliqué. Recharge la page pour voir les étiquettes sur tes cartes.";
-		} catch (error) {
-			status.textContent = errorMessage(error);
-		} finally {
-			setBusy(false);
-		}
+		await applyTagChanges(await connectSupabase(), changes, (done) => {
+			status.textContent = `Application : ${formatAmount(done)} / ${formatAmount(total)}`;
+		});
+		pendingChanges = [];
+		applyButton.hidden = true;
+		reloadButton.hidden = false;
+		status.textContent = "Classement appliqué. Recharge la page pour voir les étiquettes sur tes cartes.";
+	}
+
+	async function prepareDeletion(): Promise<void> {
+		resetPreview();
+		status.textContent = "Lecture de tes étiquettes...";
+		const snapshot = await loadTagSnapshot(await connectSupabase());
+		const tags = extensionTags(snapshot.tags);
+		const cardCount = (tag: ExistingTag): number =>
+			snapshot.copies.filter((copy) => copy.tagIds.includes(tag.id)).length;
+		pendingDeletion = tags;
+		list.replaceChildren(...tags.map((tag) => previewRow(tag, "supprimée", 0, cardCount(tag))));
+		meta.textContent = tags.length > 0 ? `${formatAmount(tags.length)} étiquettes` : "";
+		confirmDeletionButton.hidden = tags.length === 0;
+		status.textContent =
+			tags.length === 0
+				? "Aucune étiquette créée par l'extension."
+				: "Seules les étiquettes créées par l'extension partent (même nom et même couleur qu'à leur création). Les tiennes restent. Rien n'est supprimé tant que tu ne confirmes pas.";
+	}
+
+	async function confirmDeletion(): Promise<void> {
+		const tags = pendingDeletion;
+		status.textContent = `Suppression : 0 / ${formatAmount(tags.length)}`;
+		await deleteTags(await connectSupabase(), tags, (done) => {
+			status.textContent = `Suppression : ${formatAmount(done)} / ${formatAmount(tags.length)}`;
+		});
+		pendingDeletion = [];
+		confirmDeletionButton.hidden = true;
+		reloadButton.hidden = false;
+		status.textContent = "Étiquettes auto supprimées. Recharge la page pour voir le résultat.";
 	}
 
 	async function loadRules(): Promise<void> {
@@ -199,8 +243,10 @@ export function startAutoTagPanel(
 		});
 	}
 	panel.addEventListener("toggle", refreshLabels);
-	prepareButton.addEventListener("click", () => void prepare());
-	applyButton.addEventListener("click", () => void apply());
+	prepareButton.addEventListener("click", () => void runBusy(prepare));
+	applyButton.addEventListener("click", () => void runBusy(apply));
+	prepareDeletionButton.addEventListener("click", () => void runBusy(prepareDeletion));
+	confirmDeletionButton.addEventListener("click", () => void runBusy(confirmDeletion));
 	reloadButton.addEventListener("click", () => location.reload());
 	ctx.onInvalidated(enabledRulesItem.watch(() => void loadRules()));
 	resetPreview();

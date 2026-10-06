@@ -39,6 +39,7 @@ const fields = {
 	quietHoursEnd: input("quietHoursEnd"),
 	discardGuardMinPrice: input("discardGuardMinPrice"),
 	autoTagForSaleMinCote: input("autoTagForSaleMinCote"),
+	autoTagDiscardMaxCote: input("autoTagDiscardMaxCote"),
 };
 
 let current: Settings = readSettings(null);
@@ -76,6 +77,7 @@ function fill(settings: Settings): void {
 	fields.quietHoursEnd.disabled = !settings.quietHours.enabled;
 	fields.discardGuardMinPrice.value = String(settings.discardGuardMinPrice);
 	fields.autoTagForSaleMinCote.value = String(settings.autoTagForSaleMinCote);
+	fields.autoTagDiscardMaxCote.value = String(settings.autoTagDiscardMaxCote);
 }
 
 function readForm(): Settings {
@@ -98,6 +100,7 @@ function readForm(): Settings {
 		},
 		discardGuardMinPrice: numberOr(fields.discardGuardMinPrice, current.discardGuardMinPrice),
 		autoTagForSaleMinCote: numberOr(fields.autoTagForSaleMinCote, current.autoTagForSaleMinCote),
+		autoTagDiscardMaxCote: numberOr(fields.autoTagDiscardMaxCote, current.autoTagDiscardMaxCote),
 	});
 }
 

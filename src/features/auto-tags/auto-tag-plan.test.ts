@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { countLinkChanges, planAutoTags } from "./auto-tag-plan";
 import { type CollectionCopy, createAutoTagRules } from "./auto-tag-rules";
 
+const THRESHOLDS = { forSaleMinCote: 50, discardMaxCote: 20 };
+
 function copy(overrides: Partial<CollectionCopy>): CollectionCopy {
 	return {
 		userCardId: "copy",
@@ -21,15 +23,15 @@ describe("planAutoTags", () => {
 			copy({ userCardId: "a2", cardId: "a", tagIds: ["dup"] }),
 			copy({ userCardId: "b1", cardId: "b", tagIds: ["dup"] }),
 		];
-		const rules = createAutoTagRules(copies, () => null, 50);
-		const [change] = planAutoTags(copies, [rules.duplicates], [{ id: "dup", name: "doublon" }]);
-		expect(change).toMatchObject({ tagId: "dup", additions: ["a1"], removals: ["b1"] });
+		const rules = createAutoTagRules(copies, () => null, THRESHOLDS);
+		const { changes } = planAutoTags(copies, [rules.duplicates], [{ id: "dup", name: "doublon", color: "#38bdf8" }]);
+		expect(changes[0]).toMatchObject({ tagId: "dup", additions: ["a1"], removals: ["b1"] });
 	});
 
 	it("creates missing tags with only additions", () => {
 		const copies = [copy({ userCardId: "x", category: "espèce de plantes" })];
-		const rules = createAutoTagRules(copies, () => null, 50);
-		const changes = planAutoTags(copies, [rules.category], []);
+		const rules = createAutoTagRules(copies, () => null, THRESHOLDS);
+		const { changes } = planAutoTags(copies, [rules.category], []);
 		expect(changes).toEqual([
 			{ tag: { name: "Nature", color: "#4ade80" }, tagId: null, additions: ["x"], removals: [] },
 		]);
@@ -47,15 +49,45 @@ describe("planAutoTags", () => {
 			["p", 80],
 			["k", 500],
 		]);
-		const rules = createAutoTagRules(copies, (entry) => cotes.get(entry.cardId) ?? null, 50);
-		const [change] = planAutoTags(copies, [rules.forSale], [{ id: "sale", name: "À vendre" }]);
-		expect(change).toMatchObject({ additions: ["pricey"], removals: ["cheap", "kept"] });
+		const rules = createAutoTagRules(copies, (entry) => cotes.get(entry.cardId) ?? null, THRESHOLDS);
+		const { changes } = planAutoTags(copies, [rules.forSale], [{ id: "sale", name: "À vendre", color: "#22c55e" }]);
+		expect(changes[0]).toMatchObject({ additions: ["pricey"], removals: ["cheap", "kept"] });
+	});
+
+	it("marks cards under the discard cote, never favorites", () => {
+		const copies = [
+			copy({ userCardId: "cheap", cardId: "c" }),
+			copy({ userCardId: "limit", cardId: "l" }),
+			copy({ userCardId: "loved", cardId: "c", starred: true }),
+			copy({ userCardId: "unknown", cardId: "u" }),
+		];
+		const cotes = new Map([
+			["c", 5],
+			["l", 20],
+		]);
+		const rules = createAutoTagRules(copies, (entry) => cotes.get(entry.cardId) ?? null, THRESHOLDS);
+		const { changes } = planAutoTags(copies, [rules.discard], []);
+		expect(changes).toEqual([
+			{ tag: { name: "À défausser", color: "#f87171" }, tagId: null, additions: ["cheap"], removals: [] },
+		]);
+	});
+
+	it("never touches a tag the player created under the same name", () => {
+		const copies = [
+			copy({ userCardId: "a1", cardId: "a" }),
+			copy({ userCardId: "a2", cardId: "a" }),
+			copy({ userCardId: "b1", cardId: "b", tagIds: ["mine"] }),
+		];
+		const rules = createAutoTagRules(copies, () => null, THRESHOLDS);
+		const plan = planAutoTags(copies, [rules.duplicates], [{ id: "mine", name: "Doublon", color: "#f472b6" }]);
+		expect(plan.changes).toEqual([]);
+		expect(plan.userOwnedTags).toEqual([{ name: "Doublon", color: "#38bdf8" }]);
 	});
 
 	it("puts each copy in its category group and reports nothing when already sorted", () => {
 		const copies = [copy({ userCardId: "a", category: "actrice française", tagIds: ["people"] })];
-		const rules = createAutoTagRules(copies, () => null, 50);
-		const changes = planAutoTags(copies, [rules.category], [{ id: "people", name: "Personnes" }]);
+		const rules = createAutoTagRules(copies, () => null, THRESHOLDS);
+		const { changes } = planAutoTags(copies, [rules.category], [{ id: "people", name: "Personnes", color: "#F472B6" }]);
 		expect(countLinkChanges(changes)).toBe(0);
 	});
 });

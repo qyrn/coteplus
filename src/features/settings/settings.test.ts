@@ -17,11 +17,13 @@ describe("readSettings", () => {
 			reminderLeadMinutes: 0,
 			discardGuardMinPrice: 12.6,
 			autoTagForSaleMinCote: 0,
+			autoTagDiscardMaxCote: 2_000_000,
 		});
 		expect(settings.greatDealPercent).toBe(90);
 		expect(settings.reminderLeadMinutes).toBe(1);
 		expect(settings.discardGuardMinPrice).toBe(13);
 		expect(settings.autoTagForSaleMinCote).toBe(1);
+		expect(settings.autoTagDiscardMaxCote).toBe(1_000_000);
 	});
 });
 

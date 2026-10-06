@@ -14,6 +14,7 @@ import {
 	AUTO_TAG_RULE_IDS,
 	type AutoTagRuleId,
 	COTE_RULE_IDS,
+	type CollectionCopy,
 	createAutoTagRules,
 	type TagSpec,
 } from "./auto-tag-rules";
@@ -54,6 +55,10 @@ function previewRow(tag: TagSpec, statusText: string, additions: number, removal
 	status.textContent = statusText;
 	row.append(tagChip(tag), status, countChip(additions, "+"), countChip(removals, "−"));
 	return row;
+}
+
+function taggedCopyCount(copies: readonly CollectionCopy[], tag: ExistingTag): number {
+	return copies.filter((copy) => copy.tagIds.includes(tag.id)).length;
 }
 
 function changeRow(change: TagChange): HTMLLIElement {
@@ -112,10 +117,12 @@ export function startAutoTagPanel(
 	body.append(switches, actions, list, status);
 
 	let pendingChanges: TagChange[] = [];
+	let pendingRetiredTags: ExistingTag[] = [];
 	let pendingDeletion: ExistingTag[] = [];
 
 	function resetPreview(): void {
 		pendingChanges = [];
+		pendingRetiredTags = [];
 		pendingDeletion = [];
 		list.replaceChildren();
 		meta.textContent = "";
@@ -173,8 +180,15 @@ export function startAutoTagPanel(
 			snapshot.tags,
 		);
 		pendingChanges = plan.changes;
-		list.replaceChildren(...plan.changes.map(changeRow), ...plan.userOwnedTags.map(userOwnedRow));
-		const total = countLinkChanges(plan.changes);
+		pendingRetiredTags = plan.retiredTags;
+		list.replaceChildren(
+			...plan.changes.map(changeRow),
+			...plan.retiredTags.map((tag) =>
+				previewRow(tag, "ancienne, supprimée", 0, taggedCopyCount(snapshot.copies, tag)),
+			),
+			...plan.userOwnedTags.map(userOwnedRow),
+		);
+		const total = countLinkChanges(plan.changes) + plan.retiredTags.length;
 		meta.textContent = total > 0 ? `${formatAmount(total)} changements` : "";
 		applyButton.hidden = total === 0;
 		const coteNote = usesCote
@@ -191,12 +205,18 @@ export function startAutoTagPanel(
 
 	async function apply(): Promise<void> {
 		const changes = pendingChanges;
-		const total = countLinkChanges(changes);
-		status.textContent = `Application : 0 / ${formatAmount(total)}`;
-		await applyTagChanges(await connectSupabase(), changes, (done) => {
+		const retiredTags = pendingRetiredTags;
+		const linkTotal = countLinkChanges(changes);
+		const total = linkTotal + retiredTags.length;
+		const showProgress = (done: number): void => {
 			status.textContent = `Application : ${formatAmount(done)} / ${formatAmount(total)}`;
-		});
+		};
+		showProgress(0);
+		const rest = await connectSupabase();
+		await applyTagChanges(rest, changes, showProgress);
+		await deleteTags(rest, retiredTags, (done) => showProgress(linkTotal + done));
 		pendingChanges = [];
+		pendingRetiredTags = [];
 		applyButton.hidden = true;
 		reloadButton.hidden = false;
 		status.textContent = "Classement appliqué. Recharge la page pour voir les étiquettes sur tes cartes.";
@@ -207,10 +227,8 @@ export function startAutoTagPanel(
 		status.textContent = "Lecture de tes étiquettes...";
 		const snapshot = await loadTagSnapshot(await connectSupabase());
 		const tags = extensionTags(snapshot.tags);
-		const cardCount = (tag: ExistingTag): number =>
-			snapshot.copies.filter((copy) => copy.tagIds.includes(tag.id)).length;
 		pendingDeletion = tags;
-		list.replaceChildren(...tags.map((tag) => previewRow(tag, "supprimée", 0, cardCount(tag))));
+		list.replaceChildren(...tags.map((tag) => previewRow(tag, "supprimée", 0, taggedCopyCount(snapshot.copies, tag))));
 		meta.textContent = tags.length > 0 ? `${formatAmount(tags.length)} étiquettes` : "";
 		confirmDeletionButton.hidden = tags.length === 0;
 		status.textContent =

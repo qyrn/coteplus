@@ -33,7 +33,7 @@ describe("planAutoTags", () => {
 		const rules = createAutoTagRules(copies, () => null, THRESHOLDS);
 		const { changes } = planAutoTags(copies, [rules.category], []);
 		expect(changes).toEqual([
-			{ tag: { name: "Nature", color: "#4ade80" }, tagId: null, additions: ["x"], removals: [] },
+			{ tag: { name: "Plantes & champignons", color: "#4ade80" }, tagId: null, additions: ["x"], removals: [] },
 		]);
 	});
 
@@ -85,9 +85,22 @@ describe("planAutoTags", () => {
 	});
 
 	it("puts each copy in its category group and reports nothing when already sorted", () => {
-		const copies = [copy({ userCardId: "a", category: "actrice française", tagIds: ["people"] })];
+		const copies = [copy({ userCardId: "a", category: "actrice française", tagIds: ["actors"] })];
 		const rules = createAutoTagRules(copies, () => null, THRESHOLDS);
-		const { changes } = planAutoTags(copies, [rules.category], [{ id: "people", name: "Personnes", color: "#F472B6" }]);
+		const { changes } = planAutoTags(
+			copies,
+			[rules.category],
+			[{ id: "actors", name: "Acteurs & actrices", color: "#F472B6" }],
+		);
 		expect(countLinkChanges(changes)).toBe(0);
+	});
+
+	it("retires the old broad category tags the extension created, never the player's", () => {
+		const copies = [copy({ userCardId: "a", category: "actrice française", tagIds: ["old", "mine"] })];
+		const rules = createAutoTagRules(copies, () => null, THRESHOLDS);
+		const old = { id: "old", name: "Personnes", color: "#f472b6" };
+		const mine = { id: "mine", name: "Lieux", color: "#60a5fa" };
+		const { retiredTags } = planAutoTags(copies, [rules.category], [old, mine]);
+		expect(retiredTags).toEqual([old]);
 	});
 });

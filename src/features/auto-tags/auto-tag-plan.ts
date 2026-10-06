@@ -11,6 +11,7 @@ export interface TagChange {
 export interface AutoTagPlan {
 	changes: TagChange[];
 	userOwnedTags: TagSpec[];
+	retiredTags: ExistingTag[];
 }
 
 export function planAutoTags(
@@ -19,8 +20,12 @@ export function planAutoTags(
 	existingTags: readonly ExistingTag[],
 ): AutoTagPlan {
 	const existingByKey = new Map(existingTags.map((tag) => [tagKey(tag.name), tag]));
-	const plan: AutoTagPlan = { changes: [], userOwnedTags: [] };
+	const plan: AutoTagPlan = { changes: [], userOwnedTags: [], retiredTags: [] };
 	for (const rule of rules) {
+		for (const tag of rule.retiredTags) {
+			const existing = existingByKey.get(tagKey(tag.name));
+			if (existing && isExtensionTag(existing, tag)) plan.retiredTags.push(existing);
+		}
 		const wantedByCopy = new Map(copies.map((copy) => [copy.userCardId, rule.wantedTags(copy)]));
 		for (const tag of rule.tags) {
 			const existing = existingByKey.get(tagKey(tag.name));

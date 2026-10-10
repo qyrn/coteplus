@@ -1,3 +1,5 @@
+import { readRetryAfterMs } from "./transient-retry";
+
 export class HttpError extends Error {
 	constructor(
 		readonly status: number,
@@ -50,13 +52,6 @@ function wait(durationMs: number): Promise<void> {
 
 function isRetryableStatus(status: number): boolean {
 	return status === 429 || status >= 500;
-}
-
-function readRetryAfterMs(response: Response): number | null {
-	const header = response.headers.get("Retry-After");
-	if (!header) return null;
-	const seconds = Number(header);
-	return Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : null;
 }
 
 export function createRequestQueue(options: RequestQueueOptions): RequestQueue {

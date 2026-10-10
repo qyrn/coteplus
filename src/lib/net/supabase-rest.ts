@@ -1,5 +1,6 @@
 import { findSupabasePublicKey } from "../site/supabase-public-key";
 import { parseSupabaseSession } from "../site/supabase-session";
+import { retryUnprocessedResponses } from "./transient-retry";
 
 export interface InsertOptions {
 	onConflict?: string;
@@ -20,6 +21,7 @@ export class SupabaseSessionError extends Error {
 const PAGE_SIZE = 1000;
 const PAGES_PER_WAVE = 4;
 const MIN_SESSION_LIFETIME_MS = 60 * 1000;
+const BUSY_RETRY = { maxRetries: 4, baseBackoffMs: 1000 };
 
 export async function connectSupabase(): Promise<SupabaseRest> {
 	const session = parseSupabaseSession(document.cookie);
@@ -32,11 +34,15 @@ export async function connectSupabase(): Promise<SupabaseRest> {
 	const authHeaders = { apikey: publicKey, Authorization: `Bearer ${session.accessToken}` };
 
 	async function send(path: string, init: RequestInit): Promise<Response> {
-		const response = await fetch(baseUrl + path, {
-			...init,
-			credentials: "omit",
-			headers: { ...authHeaders, ...init.headers },
-		});
+		const response = await retryUnprocessedResponses(
+			() =>
+				fetch(baseUrl + path, {
+					...init,
+					credentials: "omit",
+					headers: { ...authHeaders, ...init.headers },
+				}),
+			BUSY_RETRY,
+		);
 		if (response.status === 401) throw new SupabaseSessionError("Session refusée par le site");
 		if (!response.ok) throw new Error(`Supabase a répondu ${response.status}`);
 		return response;

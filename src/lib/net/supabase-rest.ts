@@ -1,6 +1,6 @@
 import { findSupabasePublicKey } from "../site/supabase-public-key";
 import { parseSupabaseSession } from "../site/supabase-session";
-import { retryUnprocessedResponses } from "./transient-retry";
+import { retryTransientFailures } from "./transient-retry";
 
 export interface InsertOptions {
 	onConflict?: string;
@@ -33,15 +33,15 @@ export async function connectSupabase(): Promise<SupabaseRest> {
 	const baseUrl = `https://${session.projectRef}.supabase.co/rest/v1/`;
 	const authHeaders = { apikey: publicKey, Authorization: `Bearer ${session.accessToken}` };
 
-	async function send(path: string, init: RequestInit): Promise<Response> {
-		const response = await retryUnprocessedResponses(
+	async function send(path: string, init: RequestInit, repeatable: boolean): Promise<Response> {
+		const response = await retryTransientFailures(
 			() =>
 				fetch(baseUrl + path, {
 					...init,
 					credentials: "omit",
 					headers: { ...authHeaders, ...init.headers },
 				}),
-			BUSY_RETRY,
+			{ ...BUSY_RETRY, repeatable },
 		);
 		if (response.status === 401) throw new SupabaseSessionError("Session refusée par le site");
 		if (!response.ok) throw new Error(`Supabase a répondu ${response.status}`);
@@ -61,7 +61,8 @@ export async function connectSupabase(): Promise<SupabaseRest> {
 				const wave = await Promise.all(
 					Array.from({ length: PAGES_PER_WAVE }, async (_, offset) => {
 						const from = (firstPage + offset) * PAGE_SIZE;
-						return readRows(await send(path, { headers: { Range: `${from}-${from + PAGE_SIZE - 1}` } }));
+						const range = { Range: `${from}-${from + PAGE_SIZE - 1}` };
+						return readRows(await send(path, { headers: range }, true));
 					}),
 				);
 				for (const page of wave) rows.push(...page);
@@ -72,19 +73,27 @@ export async function connectSupabase(): Promise<SupabaseRest> {
 			const preferences = [options.returnRows ? "return=representation" : "return=minimal"];
 			if (options.onConflict) preferences.push("resolution=ignore-duplicates");
 			const query = options.onConflict ? `?on_conflict=${encodeURIComponent(options.onConflict)}` : "";
-			const response = await send(`${table}${query}`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json", Prefer: preferences.join(",") },
-				body: JSON.stringify(rows),
-			});
+			const response = await send(
+				`${table}${query}`,
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json", Prefer: preferences.join(",") },
+					body: JSON.stringify(rows),
+				},
+				options.onConflict !== undefined,
+			);
 			return options.returnRows ? readRows(response) : [];
 		},
 		async rpc(functionName, args) {
-			await send(`rpc/${functionName}`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(args),
-			});
+			await send(
+				`rpc/${functionName}`,
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(args),
+				},
+				true,
+			);
 		},
 	};
 }

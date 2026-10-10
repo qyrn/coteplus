@@ -74,6 +74,9 @@ function errorMessage(error: unknown): string {
 	if (error instanceof SupabaseSessionError) {
 		return "Ta session sur le site n'a pas pu être lue. Recharge la page puis réessaie.";
 	}
+	if (error instanceof TypeError) {
+		return "La connexion au site a coupé plusieurs fois de suite. Une partie a pu être appliquée : attends un peu puis relance l'aperçu pour voir ce qui reste.";
+	}
 	const detail = error instanceof Error ? ` (${error.message})` : "";
 	return `Le site a refusé la demande${detail}. Une partie a pu être appliquée : relance l'aperçu pour voir ce qui reste.`;
 }

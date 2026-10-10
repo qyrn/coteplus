@@ -11,7 +11,7 @@ function base64Url(text: string): string {
 const SESSION_JSON = JSON.stringify({
 	access_token: "token-value",
 	expires_at: 1_700_000_000,
-	user: { id: "user-1", user_metadata: { name: "Maëlyne" } },
+	user: { id: "user-1", user_metadata: { name: "Camille" } },
 });
 
 describe("parseSupabaseSession", () => {

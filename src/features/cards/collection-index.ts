@@ -27,9 +27,16 @@ export interface CollectionIndexer {
 
 const COLLECTION_PAGE_SIZE = 50;
 const SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const FAILED_SYNC_COOLDOWN_MS = 10 * 60 * 1000;
 const lastSyncedAt = storage.defineItem<number>("local:collection-index-synced-at", { fallback: 0 });
 
 export const ownedCardsItem = storage.defineItem<OwnedCard[]>("local:owned-cards", { fallback: [] });
+
+function readTotal(value: unknown): number | null {
+	if (value === null || value === undefined || value === "") return null;
+	const total = Number(value);
+	return Number.isFinite(total) ? total : null;
+}
 
 function readCollectionRow(row: unknown): CollectionRow | null {
 	if (!isRecord(row) || !isRecord(row.card)) return null;
@@ -48,7 +55,7 @@ export function parseCollectionPage(json: unknown): CollectionPage {
 	const rows = Array.isArray(json.collection) ? json.collection : [];
 	return {
 		rows: rows.map(readCollectionRow).filter((row): row is CollectionRow => row !== null),
-		total: typeof json.total === "number" ? json.total : null,
+		total: readTotal(json.total),
 	};
 }
 
@@ -75,6 +82,7 @@ export function createCollectionIndexer(
 ): CollectionIndexer {
 	let runningSync: Promise<unknown> | null = null;
 	let firstPageReady: Promise<unknown> | null = null;
+	let lastFailedAt = Number.NEGATIVE_INFINITY;
 
 	async function loadPage(page: number, priority: RequestPriority): Promise<CollectionPage> {
 		const collectionPage = parseCollectionPage(await queue.getJson(collectionPageUrl(page), priority));
@@ -109,9 +117,12 @@ export function createCollectionIndexer(
 			}
 			await track(
 				(async () => {
-					const isRecent = Date.now() - (await lastSyncedAt.getValue()) < SYNC_INTERVAL_MS;
-					if (isRecent && (await ownedCardsItem.getValue()).length > 0) return;
-					await sync();
+					if (Date.now() - lastFailedAt < FAILED_SYNC_COOLDOWN_MS) return;
+					if (Date.now() - (await lastSyncedAt.getValue()) < SYNC_INTERVAL_MS) return;
+					await sync().catch((error: unknown) => {
+						lastFailedAt = Date.now();
+						throw error;
+					});
 				})(),
 			);
 		},

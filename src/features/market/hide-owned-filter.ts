@@ -2,12 +2,12 @@ import type { ContentScriptContext } from "wxt/utils/content-script-context";
 import { storage } from "wxt/utils/storage";
 import { findCards } from "../../lib/site/card-dom";
 import type { PageWatcher } from "../../lib/site/page-watcher";
+import { HIDDEN_TILE_CLASS } from "../../lib/site/site-tile-markers";
 import type { CardCatalog } from "../cards/card-catalog";
 import { ownedCardsItem } from "../cards/collection-index";
 import { AUCTION_TILE_SELECTOR } from "./auction-tile-actions";
 import { marketExtrasSlot } from "./market-extras-slot";
 
-const HIDDEN_CLASS = "wmp-hidden-tile";
 const BROWSE_TAB_LABEL = "Parcourir";
 const ACTIVE_TAB_CLASS = "border-b-2";
 
@@ -44,24 +44,29 @@ export function startHideOwnedFilter(ctx: ContentScriptContext, pageWatcher: Pag
 		for (const tile of document.querySelectorAll<HTMLElement>(AUCTION_TILE_SELECTOR)) {
 			const card = findCards(tile)[0];
 			const hide = active && card !== undefined && ownedTitles.has(card.title);
-			if (tile.classList.contains(HIDDEN_CLASS) !== hide) tile.classList.toggle(HIDDEN_CLASS, hide);
+			if (tile.classList.contains(HIDDEN_TILE_CLASS) !== hide) tile.classList.toggle(HIDDEN_TILE_CLASS, hide);
 			if (hide) hidden++;
 		}
 		const waitingForCollection = enabled && ownedTitles.size === 0;
-		status.textContent = waitingForCollection
+		const statusText = waitingForCollection
 			? "Lecture de ta collection en cours…"
 			: active && hidden > 0
 				? `${hidden} enchère${hidden > 1 ? "s" : ""} masquée${hidden > 1 ? "s" : ""} sur cette page`
 				: "";
+		if (status.textContent !== statusText) status.textContent = statusText;
+	}
+
+	function syncCollectionIfEnabled(): void {
+		if (enabled) void catalog.collectionIndexer.syncIfStale().catch(() => undefined);
 	}
 
 	toggle.addEventListener("change", () => {
 		void hideOwnedItem.setValue(toggle.checked);
-		if (toggle.checked) void catalog.collectionIndexer.syncIfStale().catch(() => undefined);
 	});
 	void hideOwnedItem.getValue().then((value) => {
 		enabled = value;
 		toggle.checked = value;
+		syncCollectionIfEnabled();
 		apply();
 	});
 	void ownedCardsItem.getValue().then((owned) => {
@@ -72,6 +77,7 @@ export function startHideOwnedFilter(ctx: ContentScriptContext, pageWatcher: Pag
 		hideOwnedItem.watch((value) => {
 			enabled = value;
 			toggle.checked = value;
+			syncCollectionIfEnabled();
 			apply();
 		}),
 	);

@@ -1,4 +1,5 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
+import { isExtensionMutation } from "./extension-mutation";
 
 export interface PageWatcher {
 	subscribe(onPageChange: () => void): void;
@@ -10,7 +11,13 @@ export function createPageWatcher(ctx: ContentScriptContext): PageWatcher {
 
 	function notify(): void {
 		notifyScheduled = false;
-		for (const listener of listeners) listener();
+		for (const listener of listeners) {
+			try {
+				listener();
+			} catch (error) {
+				console.error("[Cote+]", error);
+			}
+		}
 	}
 
 	function scheduleNotify(): void {
@@ -19,7 +26,9 @@ export function createPageWatcher(ctx: ContentScriptContext): PageWatcher {
 		ctx.requestAnimationFrame(notify);
 	}
 
-	const mutationObserver = new MutationObserver(scheduleNotify);
+	const mutationObserver = new MutationObserver((mutations) => {
+		if (!mutations.every(isExtensionMutation)) scheduleNotify();
+	});
 	mutationObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
 	ctx.onInvalidated(() => mutationObserver.disconnect());
 

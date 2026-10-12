@@ -1,6 +1,7 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
 import { type CardView, isStillShown } from "../../lib/site/card-dom";
 import type { PageWatcher } from "../../lib/site/page-watcher";
+import { GREAT_DEAL_TILE_CLASS } from "../../lib/site/site-tile-markers";
 import { handleCardsWhenVisible } from "../../lib/site/visible-cards";
 import type { PriceService } from "../prices/price-service";
 import type { LiveSettings } from "../settings/live-settings";
@@ -8,7 +9,7 @@ import { type AuctionDeal, compareToCote, dealText, readAuctionAmount } from "./
 import { AUCTION_TILE_SELECTOR, tileActions } from "./auction-tile-actions";
 
 const DEAL_CHIP_CLASS = "wmp-deal-chip";
-const GREAT_DEAL_CLASS = "wmp-great-deal";
+
 const HANDLED_KEY_ATTRIBUTE = "data-wmp-deal-for";
 
 interface AuctionTile {
@@ -33,7 +34,7 @@ const DEAL_TONES = { great: "great", fair: "neutral", expensive: "bad" } as cons
 
 function renderDeal(auction: AuctionTile, deal: AuctionDeal | null): void {
 	auction.tile.querySelector(`.${DEAL_CHIP_CLASS}`)?.remove();
-	auction.tile.classList.toggle(GREAT_DEAL_CLASS, deal?.level === "great");
+	auction.tile.classList.toggle(GREAT_DEAL_TILE_CLASS, deal?.level === "great");
 	if (!deal) return;
 	const chip = document.createElement("span");
 	chip.className = `wmp-chip ${DEAL_CHIP_CLASS}`;

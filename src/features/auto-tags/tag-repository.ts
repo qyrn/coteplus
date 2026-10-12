@@ -43,10 +43,16 @@ function readTag(row: unknown): ExistingTag | null {
 	return { id: row.id, name: row.name, color: typeof row.color === "string" ? row.color : "" };
 }
 
-export async function loadTagSnapshot(rest: SupabaseRest): Promise<TagSnapshot> {
+export async function loadTagSnapshot(
+	rest: SupabaseRest,
+	onCopiesRead: (copyCount: number) => void,
+): Promise<TagSnapshot> {
 	const owner = `user_id=eq.${encodeURIComponent(rest.userId)}`;
 	const [copyRows, tagRows] = await Promise.all([
-		rest.getAll(`user_cards?select=id,card_id,starred,card:cards(rarity,category),user_card_tags(tag_id)&${owner}`),
+		rest.getAll(
+			`user_cards?select=id,card_id,starred,card:cards(rarity,category),user_card_tags(tag_id)&${owner}`,
+			onCopiesRead,
+		),
 		rest.getAll(`tags?select=id,name,color&${owner}`),
 	]);
 	return {

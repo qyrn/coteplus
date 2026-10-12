@@ -155,6 +155,10 @@ export function startAutoTagPanel(
 		for (const input of inputs.values()) input.disabled = isBusy;
 	}
 
+	function showCopiesRead(copyCount: number): void {
+		status.textContent = `Lecture de ta collection : ${formatAmount(copyCount)} cartes lues...`;
+	}
+
 	async function runBusy(task: () => Promise<void>): Promise<void> {
 		setBusy(true);
 		try {
@@ -176,7 +180,7 @@ export function startAutoTagPanel(
 			return;
 		}
 		status.textContent = "Lecture de ta collection et de tes étiquettes...";
-		const snapshot = await loadTagSnapshot(await connectSupabase());
+		const snapshot = await loadTagSnapshot(await connectSupabase(), showCopiesRead);
 		const cards = [...new Map(snapshot.copies.map((copy) => [copy.cardId, copy])).values()];
 		const usesCote = ruleIds.some((id) => COTE_RULE_IDS.includes(id));
 		const stats = usesCote ? await priceService.cachedPriceStats(cards) : new Map<string, PriceStats>();
@@ -237,7 +241,7 @@ export function startAutoTagPanel(
 	async function prepareDeletion(): Promise<void> {
 		resetPreview();
 		status.textContent = "Lecture de tes étiquettes...";
-		const snapshot = await loadTagSnapshot(await connectSupabase());
+		const snapshot = await loadTagSnapshot(await connectSupabase(), showCopiesRead);
 		const tags = extensionTags(snapshot.tags, AUTO_TAGS);
 		pendingCopies = snapshot.copies;
 		pendingDeletion = tags;

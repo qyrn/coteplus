@@ -22,6 +22,16 @@ describe("readAllAfterLastId", () => {
 		]);
 	});
 
+	it("reports the running row count after each page", async () => {
+		const fetchPage = vi
+			.fn<FetchPageAfter>()
+			.mockResolvedValueOnce(rowsFrom(0, 1000))
+			.mockResolvedValueOnce(rowsFrom(1000, 3));
+		const onRowsRead = vi.fn();
+		await readAllAfterLastId(fetchPage, onRowsRead);
+		expect(onRowsRead.mock.calls).toEqual([[1000], [1003]]);
+	});
+
 	it("halves the page size when the database times out, then grows it back", async () => {
 		const fetchPage = vi
 			.fn<FetchPageAfter>()

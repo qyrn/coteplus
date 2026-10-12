@@ -12,7 +12,7 @@ export interface InsertOptions {
 
 export interface SupabaseRest {
 	userId: string;
-	getAll(path: string): Promise<unknown[]>;
+	getAll(path: string, onRowsRead?: (rowCount: number) => void): Promise<unknown[]>;
 	insert(table: string, rows: readonly object[], options?: InsertOptions): Promise<unknown[]>;
 	deleteRows(path: string): Promise<void>;
 	rpc(functionName: string, args: object): Promise<void>;
@@ -68,11 +68,11 @@ export async function connectSupabase(): Promise<SupabaseRest> {
 
 	return {
 		userId: session.userId,
-		getAll(path) {
+		getAll(path, onRowsRead) {
 			return readAllAfterLastId(async (pageSize, afterId) => {
 				const cursor = afterId ? `&id=gt.${encodeURIComponent(afterId)}` : "";
 				return readRows(await send(`${path}&order=id&limit=${pageSize}${cursor}`, {}, true));
-			});
+			}, onRowsRead);
 		},
 		async insert(table, rows, options = {}) {
 			const preferences = [options.returnRows ? "return=representation" : "return=minimal"];

@@ -11,7 +11,10 @@ function readRowId(row: unknown): string | null {
 	return isRecord(row) && typeof row.id === "string" ? row.id : null;
 }
 
-export async function readAllAfterLastId(fetchPage: FetchPageAfter): Promise<unknown[]> {
+export async function readAllAfterLastId(
+	fetchPage: FetchPageAfter,
+	onRowsRead: (rowCount: number) => void = () => {},
+): Promise<unknown[]> {
 	const rows: unknown[] = [];
 	let pageSize = FIRST_PAGE_SIZE;
 	let afterId: string | null = null;
@@ -26,6 +29,7 @@ export async function readAllAfterLastId(fetchPage: FetchPageAfter): Promise<unk
 			continue;
 		}
 		rows.push(...page);
+		onRowsRead(rows.length);
 		const lastId = readRowId(page.at(-1));
 		if (page.length < pageSize || !lastId) return rows;
 		afterId = lastId;

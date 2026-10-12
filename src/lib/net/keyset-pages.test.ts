@@ -37,10 +37,14 @@ describe("readAllAfterLastId", () => {
 		]);
 	});
 
-	it("gives up once the smallest page still times out", async () => {
+	it("retries the smallest page before giving up", async () => {
+		vi.useFakeTimers();
 		const fetchPage = vi.fn<FetchPageAfter>().mockRejectedValue(timeout);
-		await expect(readAllAfterLastId(fetchPage)).rejects.toBe(timeout);
-		expect(fetchPage.mock.calls.at(-1)).toEqual([50, null]);
+		const result = expect(readAllAfterLastId(fetchPage)).rejects.toBe(timeout);
+		await vi.runAllTimersAsync();
+		await result;
+		expect(fetchPage.mock.calls.slice(-4)).toEqual(Array.from({ length: 4 }, () => [50, null]));
+		vi.useRealTimers();
 	});
 
 	it("never shrinks on another error", async () => {

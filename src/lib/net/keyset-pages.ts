@@ -1,4 +1,5 @@
 import { isRecord } from "../json";
+import { retryStatementTimeouts } from "./statement-timeout-retry";
 import { isStatementTimeout } from "./supabase-request-error";
 
 export type FetchPageAfter = (pageSize: number, afterId: string | null) => Promise<unknown[]>;
@@ -15,9 +16,10 @@ export async function readAllAfterLastId(fetchPage: FetchPageAfter): Promise<unk
 	let pageSize = FIRST_PAGE_SIZE;
 	let afterId: string | null = null;
 	for (;;) {
+		const fetchCurrentPage = (): Promise<unknown[]> => fetchPage(pageSize, afterId);
 		let page: unknown[];
 		try {
-			page = await fetchPage(pageSize, afterId);
+			page = pageSize > MIN_PAGE_SIZE ? await fetchCurrentPage() : await retryStatementTimeouts(fetchCurrentPage);
 		} catch (error) {
 			if (!isStatementTimeout(error) || pageSize <= MIN_PAGE_SIZE) throw error;
 			pageSize = Math.max(MIN_PAGE_SIZE, Math.ceil(pageSize / 2));

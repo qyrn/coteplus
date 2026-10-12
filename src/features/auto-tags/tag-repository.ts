@@ -1,5 +1,6 @@
 import { isRecord } from "../../lib/json";
 import { runInShrinkingChunks } from "../../lib/net/shrinking-chunks";
+import { retryStatementTimeouts } from "../../lib/net/statement-timeout-retry";
 import type { SupabaseRest } from "../../lib/net/supabase-rest";
 import { isRarity } from "../../lib/site/rarity";
 import type { TagChange } from "./auto-tag-plan";
@@ -71,7 +72,7 @@ export async function applyTagChanges(
 ): Promise<void> {
 	let doneLinks = 0;
 	for (const change of changes) {
-		const tagId = change.tagId ?? (await createTag(rest, change));
+		const tagId = change.tagId ?? (await retryStatementTimeouts(() => createTag(rest, change)));
 		await runInShrinkingChunks(change.additions, INSERT_CHUNK_SIZE, async (userCardIds) => {
 			const links = userCardIds.map((userCardId) => ({ user_card_id: userCardId, tag_id: tagId }));
 			await rest.insert("user_card_tags", links, { onConflict: LINK_CONFLICT_COLUMNS });
@@ -97,7 +98,7 @@ export async function deleteTags(
 ): Promise<void> {
 	for (const [index, tag] of tags.entries()) {
 		await deleteLinks(rest, tag, copies);
-		await rest.rpc("delete_tag", { p_tag_id: tag.id });
+		await retryStatementTimeouts(() => rest.rpc("delete_tag", { p_tag_id: tag.id }));
 		onProgress(index + 1);
 	}
 }

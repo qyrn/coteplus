@@ -21,11 +21,16 @@ describe("runInShrinkingChunks", () => {
 		expect(sent).toEqual([[1, 2], [3], [4, 5]]);
 	});
 
-	it("gives up on a single item that still times out", async () => {
+	it("retries a single item that times out before giving up", async () => {
+		vi.useFakeTimers();
 		const task = vi.fn(async () => {
 			throw timeout;
 		});
-		await expect(runInShrinkingChunks([1], 5, task)).rejects.toBe(timeout);
+		const result = expect(runInShrinkingChunks([1], 5, task)).rejects.toBe(timeout);
+		await vi.runAllTimersAsync();
+		await result;
+		expect(task).toHaveBeenCalledTimes(4);
+		vi.useRealTimers();
 	});
 
 	it("never splits on another error", async () => {

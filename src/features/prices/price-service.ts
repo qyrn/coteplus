@@ -1,6 +1,6 @@
 import { CACHE_NAMESPACES } from "../../lib/cache/namespaces";
 import { createTtlStore } from "../../lib/cache/ttl-store";
-import type { RequestPriority, RequestQueue, StillWanted } from "../../lib/net/request-queue";
+import { HttpError, type RequestPriority, type RequestQueue, type StillWanted } from "../../lib/net/request-queue";
 import type { Rarity } from "../../lib/site/rarity";
 import type { CardCatalog } from "../cards/card-catalog";
 import {
@@ -15,6 +15,7 @@ import { coteSheet, hasSalesHistory, parseSales } from "./sales-history";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PRICE_TTL_MS = 30 * DAY_MS;
 const PRICE_REFRESH_AFTER_MS = 3 * DAY_MS;
+const PRO_ONLY_STATUSES = new Set([401, 403]);
 
 export interface PriceLookup {
 	value: number | null;
@@ -45,11 +46,28 @@ export function createPriceService(queue: RequestQueue, catalog: CardCatalog): P
 	const legacyStore = createTtlStore<LegacyPriceSummary>(CACHE_NAMESPACES.legacyPriceSummary);
 	const inFlight = new Map<string, Promise<PriceSheet>>();
 
+	let salesHistoryRefused = false;
+
+	async function downloadSalesHistory(
+		cardId: string,
+		priority: RequestPriority,
+		isWanted?: StillWanted,
+	): Promise<PriceSheet | null> {
+		try {
+			const json = await queue.getJson(salesUrl(cardId), priority, isWanted);
+			if (hasSalesHistory(json)) return coteSheet(parseSales(json));
+			const summary = parsePriceSummary(json);
+			return Object.keys(summary).length > 0 ? summary : null;
+		} catch (error) {
+			if (!(error instanceof HttpError && PRO_ONLY_STATUSES.has(error.status))) throw error;
+			salesHistoryRefused = true;
+			return null;
+		}
+	}
+
 	async function downloadSheet(cardId: string, priority: RequestPriority, isWanted?: StillWanted): Promise<PriceSheet> {
-		const json = await queue.getJson(salesUrl(cardId), priority, isWanted);
-		if (hasSalesHistory(json)) return coteSheet(parseSales(json));
-		const summary = parsePriceSummary(json);
-		if (Object.keys(summary).length > 0) return summary;
+		const history = salesHistoryRefused ? null : await downloadSalesHistory(cardId, priority, isWanted);
+		if (history) return history;
 		return parsePriceSummary(await queue.getJson(`${salesUrl(cardId)}?scope=summary`, priority, isWanted));
 	}
 

@@ -86,7 +86,7 @@ export default defineContentScript({
 		startMarketDeals(ctx, pageWatcher, priceService, settings);
 		const marketFollow = startMarketFollow(ctx, pageWatcher, siteApi);
 		startStandingWatch(ctx, siteApi);
-		startNotificationWatcher(pageWatcher, siteApi);
+		startNotificationWatcher(ctx, pageWatcher, siteApi);
 		startMarketReportPanel(pageWatcher, marketFollow, priceService);
 		startHideOwnedFilter(ctx, pageWatcher, catalog);
 		startWishlistRedirect(ctx, pageWatcher, settings);

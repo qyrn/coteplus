@@ -8,11 +8,21 @@ function owned(cardId: string, rarity: OwnedCard["rarity"], copies = 1): OwnedCa
 	return { cardId, hideImage: false, title: cardId, rarity, copies, starredCopies: 0 };
 }
 
+function fakePriceService(loadIfUnknown: PriceService["loadIfUnknown"]): PriceService {
+	return {
+		getPrice: async () => ({ value: null, stats: null, refreshed: null }),
+		cachedPriceStats: async () => new Map(),
+		checkedCardIds: async () => new Set(),
+		loadIfUnknown,
+	};
+}
+
 describe("pricingOrder", () => {
-	it("skips priced cards and starts with the rarest, then the most copies", () => {
+	it("keeps unchecked L, UR and sampled cards, rarest first then most copies", () => {
 		const order = pricingOrder(
-			[owned("c", "C", 1), owned("l", "L"), owned("r1", "R", 1), owned("r2", "R", 3), owned("sr", "SR")],
-			new Set(["sr"]),
+			[owned("c", "C"), owned("l", "L"), owned("r1", "R", 1), owned("r2", "R", 3), owned("u", "UR"), owned("c2", "C")],
+			new Set(["u"]),
+			new Set(["c", "r1", "r2"]),
 		);
 		expect(order.map((card) => card.cardId)).toEqual(["l", "r2", "r1", "c"]);
 	});
@@ -25,38 +35,24 @@ describe("loadMissingPrices", () => {
 			wanted = false;
 			return true;
 		});
-		const priceService: PriceService = {
-			getPrice: async () => ({ value: null, stats: null, refreshed: null }),
-			cachedPriceStats: async () => new Map(),
-			loadIfUnknown,
-		};
 		const onLoaded = vi.fn();
-		const completed = await loadMissingPrices([owned("a", "L"), owned("b", "C")], priceService, () => wanted, onLoaded);
+		const completed = await loadMissingPrices(
+			[owned("a", "L"), owned("b", "C")],
+			fakePriceService(loadIfUnknown),
+			() => wanted,
+			onLoaded,
+		);
 		expect(completed).toBe(false);
 		expect(loadIfUnknown).toHaveBeenCalledTimes(1);
 		expect(onLoaded).toHaveBeenCalledTimes(1);
 	});
-});
 
-describe("loadMissingPrices when the site pauses the extension", () => {
-	it("reports an unfinished run instead of skipping every card", async () => {
+	it("reports an unfinished run when the site pauses the extension", async () => {
 		const loadIfUnknown = vi.fn<PriceService["loadIfUnknown"]>(async () => {
 			throw new SiteApiPausedError("Requêtes en pause");
 		});
-		const priceService: PriceService = {
-			getPrice: async () => ({ value: null, stats: null, refreshed: null }),
-			cachedPriceStats: async () => new Map(),
-			loadIfUnknown,
-		};
 		const cards = Array.from({ length: 10 }, (_, index) => owned(`c${index}`, "C"));
-		await expect(
-			loadMissingPrices(
-				cards,
-				priceService,
-				() => true,
-				() => undefined,
-			),
-		).resolves.toBe(false);
+		await expect(loadMissingPrices(cards, fakePriceService(loadIfUnknown), () => true, vi.fn())).resolves.toBe(false);
 		expect(loadIfUnknown.mock.calls.length).toBeLessThanOrEqual(2);
 	});
 
@@ -65,20 +61,8 @@ describe("loadMissingPrices when the site pauses the extension", () => {
 			if (card.cardId === "c0") throw new Error("HTTP 500");
 			return true;
 		});
-		const priceService: PriceService = {
-			getPrice: async () => ({ value: null, stats: null, refreshed: null }),
-			cachedPriceStats: async () => new Map(),
-			loadIfUnknown,
-		};
 		const cards = Array.from({ length: 4 }, (_, index) => owned(`c${index}`, "C"));
-		await expect(
-			loadMissingPrices(
-				cards,
-				priceService,
-				() => true,
-				() => undefined,
-			),
-		).resolves.toBe(true);
+		await expect(loadMissingPrices(cards, fakePriceService(loadIfUnknown), () => true, vi.fn())).resolves.toBe(true);
 		expect(loadIfUnknown).toHaveBeenCalledTimes(4);
 	});
 });

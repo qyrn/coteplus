@@ -2,6 +2,7 @@ import { NonRetryableError, type StillWanted } from "../../lib/net/request-queue
 import { RARITIES } from "../../lib/site/rarity";
 import type { OwnedCard } from "../cards/collection-index";
 import type { PriceService } from "../prices/price-service";
+import { isExactRarity } from "./collection-sample";
 
 const PARALLEL_LOADS = 2;
 
@@ -9,9 +10,15 @@ function rarityRank(card: OwnedCard): number {
 	return RARITIES.indexOf(card.rarity);
 }
 
-export function pricingOrder(owned: readonly OwnedCard[], pricedCardIds: ReadonlySet<string>): OwnedCard[] {
+export function pricingOrder(
+	owned: readonly OwnedCard[],
+	checkedCardIds: ReadonlySet<string>,
+	sampleCardIds: ReadonlySet<string>,
+): OwnedCard[] {
 	return owned
-		.filter((card) => !pricedCardIds.has(card.cardId))
+		.filter(
+			(card) => !checkedCardIds.has(card.cardId) && (isExactRarity(card.rarity) || sampleCardIds.has(card.cardId)),
+		)
 		.sort((left, right) => rarityRank(right) - rarityRank(left) || right.copies - left.copies);
 }
 

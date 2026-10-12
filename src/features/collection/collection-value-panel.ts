@@ -8,16 +8,15 @@ import type { PriceService } from "../prices/price-service";
 import type { PriceStats } from "../prices/price-summary";
 import { collectionExtrasSlot } from "./collection-extras-slot";
 import { loadMissingPrices, pricingOrder } from "./collection-pricing";
+import { SAMPLE_SIZE_PER_RARITY, sampledCardIds } from "./collection-sample";
 import {
 	type CollectionValue,
 	collectionValueHistoryItem,
 	computeCollectionValue,
 	dayKey,
-	estimateUnpricedValue,
 	raritiesByValue,
 	readValueHistory,
 	recordValuePoint,
-	type UnpricedEstimate,
 	type ValuePoint,
 } from "./collection-value";
 import { createSparkline } from "./value-sparkline";
@@ -59,17 +58,6 @@ function rarityLine(value: CollectionValue): HTMLParagraphElement {
 	return line;
 }
 
-function estimateLine(estimate: UnpricedEstimate, value: CollectionValue): HTMLParagraphElement[] {
-	if (estimate.cards === 0) return [];
-	const line = document.createElement("p");
-	line.className = "wmp-row-muted";
-	line.append(
-		`Si tes ${formatAmount(estimate.cards)} cartes sans cote valent autant que les autres de leur rareté : `,
-		amountElement(formatAmount(value.total + estimate.total), "≈ "),
-	);
-	return [line];
-}
-
 export function startCollectionValuePanel(
 	ctx: ContentScriptContext,
 	pageWatcher: PageWatcher,
@@ -97,8 +85,7 @@ export function startCollectionValuePanel(
 		if (pricing || pricingDone || !isPricingWanted()) return;
 		pricing = (async () => {
 			const owned = await ownedCardsItem.getValue();
-			const stats = await priceService.cachedPriceStats(owned);
-			const missing = pricingOrder(owned, new Set(stats.keys()));
+			const missing = await cardsToPrice(owned);
 			pricingDone = await loadMissingPrices(missing, priceService, isPricingWanted, scheduleRefresh);
 		})()
 			.catch(() => undefined)
@@ -107,13 +94,18 @@ export function startCollectionValuePanel(
 			});
 	}
 
+	async function cardsToPrice(owned: readonly OwnedCard[]): Promise<OwnedCard[]> {
+		const checked = await priceService.checkedCardIds(owned.map((card) => card.cardId));
+		return pricingOrder(owned, checked, sampledCardIds(owned));
+	}
+
 	async function refresh(): Promise<void> {
 		const owned = await ownedCardsItem.getValue();
 		if (owned.length === 0) return;
 		const stats = await priceService.cachedPriceStats(owned);
 		const statsOf = (card: OwnedCard): PriceStats | null => stats.get(card.cardId) ?? null;
-		const value = computeCollectionValue(owned, statsOf);
-		const estimate = estimateUnpricedValue(owned, statsOf);
+		const value = computeCollectionValue(owned, statsOf, sampledCardIds(owned));
+		const remaining = (await cardsToPrice(owned)).length;
 		const point: ValuePoint = {
 			day: dayKey(new Date()),
 			total: value.total,
@@ -125,7 +117,7 @@ export function startCollectionValuePanel(
 		meta.replaceChildren(amountElement(formatAmount(value.total), "≈ "));
 		const headline = document.createElement("div");
 		headline.className = "wmp-value-headline";
-		const total = amountElement(formatAmount(value.total));
+		const total = amountElement(formatAmount(value.total), "≈ ");
 		total.classList.add("wmp-value-total");
 		headline.append(total, changeChip(history, point));
 		const totals = history.map((entry) => entry.total);
@@ -134,10 +126,16 @@ export function startCollectionValuePanel(
 			headline,
 			...chart,
 			rarityLine(value),
-			...estimateLine(estimate, value),
 			note(
-				`Cote connue pour ${formatAmount(value.pricedCards)} cartes sur ${formatAmount(value.ownedCards)}. Les cotes manquantes se chargent toutes seules quand ta collection est affichée à l'écran, en commençant par les plus rares.`,
+				`Tes L et UR sont chiffrées une par une. Pour les autres raretés, l'extension prend ${SAMPLE_SIZE_PER_RARITY} cartes au hasard dans chacune et applique leur cote moyenne au reste.`,
 			),
+			...(remaining > 0
+				? [
+						note(
+							`Encore ${formatAmount(remaining)} cotes à charger avant que le total soit fiable. Laisse ta collection affichée à l'écran pendant ce temps !`,
+						),
+					]
+				: []),
 		);
 	}
 

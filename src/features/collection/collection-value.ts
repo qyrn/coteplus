@@ -3,11 +3,13 @@ import { isRecord } from "../../lib/json";
 import { RARITIES, type Rarity } from "../../lib/site/rarity";
 import type { OwnedCard } from "../cards/collection-index";
 import type { PriceStats } from "../prices/price-summary";
+import { isExactRarity } from "./collection-sample";
 
 export interface CollectionValue {
 	total: number;
 	byRarity: Partial<Record<Rarity, number>>;
 	pricedCards: number;
+	estimatedCards: number;
 	ownedCards: number;
 }
 
@@ -24,22 +26,45 @@ export const collectionValueHistoryItem = storage.defineItem<unknown>("local:col
 	fallback: [],
 });
 
+function sampleAverages(
+	owned: readonly OwnedCard[],
+	coteOf: (card: OwnedCard) => number,
+	sampleCardIds: ReadonlySet<string>,
+): Map<Rarity, number> {
+	const cotesByRarity = new Map<Rarity, number[]>();
+	for (const card of owned) {
+		const cote = coteOf(card);
+		if (!sampleCardIds.has(card.cardId) || cote <= 0) continue;
+		cotesByRarity.set(card.rarity, [...(cotesByRarity.get(card.rarity) ?? []), cote]);
+	}
+	return new Map(
+		[...cotesByRarity].map(([rarity, cotes]) => [rarity, cotes.reduce((sum, cote) => sum + cote, 0) / cotes.length]),
+	);
+}
+
 export function computeCollectionValue(
 	owned: readonly OwnedCard[],
 	statsOf: (card: OwnedCard) => PriceStats | null,
+	sampleCardIds: ReadonlySet<string>,
 ): CollectionValue {
+	const coteOf = (card: OwnedCard): number => statsOf(card)?.value ?? 0;
+	const averages = sampleAverages(owned, coteOf, sampleCardIds);
 	const byRarity: Partial<Record<Rarity, number>> = {};
 	let total = 0;
 	let pricedCards = 0;
+	let estimatedCards = 0;
 	for (const card of owned) {
-		const cote = statsOf(card)?.value ?? 0;
-		if (cote <= 0) continue;
-		const cardValue = cote * card.copies;
+		const cote = coteOf(card);
+		const estimate = isExactRarity(card.rarity) ? 0 : (averages.get(card.rarity) ?? 0);
+		const unitValue = cote > 0 ? cote : estimate;
+		if (unitValue <= 0) continue;
+		if (cote > 0) pricedCards += 1;
+		else estimatedCards += 1;
+		const cardValue = unitValue * card.copies;
 		total += cardValue;
-		pricedCards += 1;
 		byRarity[card.rarity] = (byRarity[card.rarity] ?? 0) + cardValue;
 	}
-	return { total: Math.round(total), byRarity, pricedCards, ownedCards: owned.length };
+	return { total: Math.round(total), byRarity, pricedCards, estimatedCards, ownedCards: owned.length };
 }
 
 export function dayKey(date: Date): string {
@@ -73,42 +98,4 @@ export function raritiesByValue(value: CollectionValue): [Rarity, number][] {
 		const amount = value.byRarity[rarity];
 		return amount ? [[rarity, Math.round(amount)]] : [];
 	}).sort((left, right) => right[1] - left[1]);
-}
-
-export interface UnpricedEstimate {
-	total: number;
-	cards: number;
-}
-
-function median(values: readonly number[]): number | null {
-	if (values.length === 0) return null;
-	const sorted = [...values].sort((left, right) => left - right);
-	const middle = Math.floor(sorted.length / 2);
-	return sorted.length % 2 === 1 ? (sorted[middle] ?? null) : ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
-}
-
-export function estimateUnpricedValue(
-	owned: readonly OwnedCard[],
-	statsOf: (card: OwnedCard) => PriceStats | null,
-): UnpricedEstimate {
-	const cotesByRarity = new Map<Rarity, number[]>();
-	const unpriced: OwnedCard[] = [];
-	for (const card of owned) {
-		const cote = statsOf(card)?.value ?? 0;
-		if (cote <= 0) {
-			unpriced.push(card);
-			continue;
-		}
-		cotesByRarity.set(card.rarity, [...(cotesByRarity.get(card.rarity) ?? []), cote]);
-	}
-	const medianByRarity = new Map(RARITIES.map((rarity) => [rarity, median(cotesByRarity.get(rarity) ?? [])]));
-	let total = 0;
-	let cards = 0;
-	for (const card of unpriced) {
-		const typicalCote = medianByRarity.get(card.rarity);
-		if (!typicalCote) continue;
-		total += typicalCote * card.copies;
-		cards += 1;
-	}
-	return { total: Math.round(total), cards };
 }

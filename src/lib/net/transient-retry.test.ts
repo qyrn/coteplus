@@ -78,4 +78,13 @@ describe("retryTransientFailures", () => {
 		await expect(retryTransientFailures(send, { ...options(), repeatable: false })).rejects.toThrow("Failed to fetch");
 		expect(send).toHaveBeenCalledTimes(1);
 	});
+
+	it("retries a request that took too long to answer", async () => {
+		const send = vi
+			.fn<() => Promise<Response>>()
+			.mockRejectedValueOnce(new DOMException("signal timed out", "TimeoutError"))
+			.mockResolvedValueOnce(response(200));
+		const result = await retryTransientFailures(send, options());
+		expect(result.status).toBe(200);
+	});
 });

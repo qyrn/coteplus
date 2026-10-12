@@ -1,5 +1,6 @@
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
 import { connectSupabase, SupabaseSessionError } from "../../lib/net/supabase-rest";
+import { isRequestTimeout } from "../../lib/net/transient-retry";
 import type { PageWatcher } from "../../lib/site/page-watcher";
 import { formatAmount } from "../../lib/ui/amount";
 import { createButton } from "../../lib/ui/button";
@@ -73,6 +74,9 @@ function userOwnedRow(tag: TagSpec): HTMLLIElement {
 function errorMessage(error: unknown): string {
 	if (error instanceof SupabaseSessionError) {
 		return "Ta session sur le site n'a pas pu être lue. Recharge la page puis réessaie.";
+	}
+	if (isRequestTimeout(error)) {
+		return "Le site met beaucoup trop de temps à répondre en ce moment. Réessaie dans quelques minutes et relance l'aperçu pour voir ce qui reste.";
 	}
 	if (error instanceof TypeError) {
 		return "La connexion au site a coupé plusieurs fois de suite. Une partie a pu être appliquée : attends un peu puis relance l'aperçu pour voir ce qui reste.";

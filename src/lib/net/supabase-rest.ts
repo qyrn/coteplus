@@ -24,6 +24,7 @@ export class SupabaseSessionError extends Error {
 
 const MIN_SESSION_LIFETIME_MS = 60 * 1000;
 const BUSY_RETRY = { maxRetries: 4, baseBackoffMs: 1000 };
+const REQUEST_TIMEOUT_MS = 60 * 1000;
 
 async function readErrorCode(response: Response): Promise<string | null> {
 	try {
@@ -50,6 +51,7 @@ export async function connectSupabase(): Promise<SupabaseRest> {
 				fetch(baseUrl + path, {
 					...init,
 					credentials: "omit",
+					signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
 					headers: { ...authHeaders, ...init.headers },
 				}),
 			{ ...BUSY_RETRY, repeatable },

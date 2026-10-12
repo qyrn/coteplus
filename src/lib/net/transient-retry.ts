@@ -16,8 +16,12 @@ function wait(durationMs: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, durationMs));
 }
 
+export function isRequestTimeout(error: unknown): boolean {
+	return error instanceof DOMException && error.name === "TimeoutError";
+}
+
 function isNetworkFailure(error: unknown): boolean {
-	return error instanceof TypeError;
+	return error instanceof TypeError || isRequestTimeout(error);
 }
 
 export function readRetryAfterMs(response: Response): number | null {

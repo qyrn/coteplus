@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { OwnedCard } from "../cards/collection-index";
-import { computeCollectionValue, dayKey, raritiesByValue, recordValuePoint } from "./collection-value";
+import {
+	computeCollectionValue,
+	dayKey,
+	estimateUnpricedValue,
+	raritiesByValue,
+	recordValuePoint,
+} from "./collection-value";
 import { sparklinePoints } from "./value-sparkline";
 
 function owned(cardId: string, rarity: OwnedCard["rarity"], copies: number): OwnedCard {
@@ -43,5 +49,25 @@ describe("sparklinePoints", () => {
 	it("maps the lowest value to the bottom and the highest to the top", () => {
 		expect(sparklinePoints([0, 10], 100, 50, 0)).toBe("0.0,50.0 100.0,0.0");
 		expect(sparklinePoints([5], 100, 50, 0)).toBe("");
+	});
+});
+
+describe("estimateUnpricedValue", () => {
+	it("prices unknown cards at the median cote of their rarity", () => {
+		const cotes = new Map([
+			["c1", 10],
+			["c2", 30],
+			["c3", 20],
+		]);
+		const estimate = estimateUnpricedValue(
+			[owned("c1", "C", 1), owned("c2", "C", 1), owned("c3", "C", 1), owned("c4", "C", 2), owned("l1", "L", 1)],
+			(card) => {
+				const cote = cotes.get(card.cardId);
+				return cote === undefined
+					? null
+					: { value: cote, basis: "recent" as const, low: null, high: null, salesCount: null, latestPrice: null };
+			},
+		);
+		expect(estimate).toEqual({ total: 40, cards: 1 });
 	});
 });

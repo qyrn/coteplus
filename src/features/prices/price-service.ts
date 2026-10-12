@@ -31,6 +31,7 @@ export interface PricedCardKey {
 export interface PriceService {
 	getPrice(title: string, rarity: Rarity, isWanted?: StillWanted): Promise<PriceLookup>;
 	cachedPriceStats(cards: readonly PricedCardKey[]): Promise<Map<string, PriceStats>>;
+	loadIfUnknown(card: PricedCardKey, isWanted: StillWanted): Promise<boolean>;
 }
 
 function isFresh(storedAt: number): boolean {
@@ -98,6 +99,11 @@ export function createPriceService(queue: RequestQueue, catalog: CardCatalog): P
 				if (stats) found.set(card.cardId, stats);
 			}
 			return found;
+		},
+		async loadIfUnknown(card, isWanted) {
+			if ((await sheetStore.get(card.cardId)) || (await legacyStore.get(card.cardId))) return false;
+			await fetchSheet(card.cardId, "background", isWanted);
+			return true;
 		},
 		async getPrice(title, rarity, isWanted) {
 			const cardId = (await catalog.resolve(title, rarity, isWanted))?.cardId;

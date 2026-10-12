@@ -74,3 +74,41 @@ export function raritiesByValue(value: CollectionValue): [Rarity, number][] {
 		return amount ? [[rarity, Math.round(amount)]] : [];
 	}).sort((left, right) => right[1] - left[1]);
 }
+
+export interface UnpricedEstimate {
+	total: number;
+	cards: number;
+}
+
+function median(values: readonly number[]): number | null {
+	if (values.length === 0) return null;
+	const sorted = [...values].sort((left, right) => left - right);
+	const middle = Math.floor(sorted.length / 2);
+	return sorted.length % 2 === 1 ? (sorted[middle] ?? null) : ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
+}
+
+export function estimateUnpricedValue(
+	owned: readonly OwnedCard[],
+	statsOf: (card: OwnedCard) => PriceStats | null,
+): UnpricedEstimate {
+	const cotesByRarity = new Map<Rarity, number[]>();
+	const unpriced: OwnedCard[] = [];
+	for (const card of owned) {
+		const cote = statsOf(card)?.value ?? 0;
+		if (cote <= 0) {
+			unpriced.push(card);
+			continue;
+		}
+		cotesByRarity.set(card.rarity, [...(cotesByRarity.get(card.rarity) ?? []), cote]);
+	}
+	const medianByRarity = new Map(RARITIES.map((rarity) => [rarity, median(cotesByRarity.get(rarity) ?? [])]));
+	let total = 0;
+	let cards = 0;
+	for (const card of unpriced) {
+		const typicalCote = medianByRarity.get(card.rarity);
+		if (!typicalCote) continue;
+		total += typicalCote * card.copies;
+		cards += 1;
+	}
+	return { total: Math.round(total), cards };
+}

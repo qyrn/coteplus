@@ -6,9 +6,10 @@ export interface TransientRetryOptions {
 }
 
 const UNPROCESSED_STATUSES = new Set([429, 503]);
+const GATEWAY_STATUSES = new Set([502, 504]);
 
 function isRetryableStatus(status: number, repeatable: boolean): boolean {
-	return UNPROCESSED_STATUSES.has(status) || (repeatable && status >= 500);
+	return UNPROCESSED_STATUSES.has(status) || (repeatable && GATEWAY_STATUSES.has(status));
 }
 
 function wait(durationMs: number): Promise<void> {

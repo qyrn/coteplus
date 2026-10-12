@@ -2,8 +2,7 @@ import { browser } from "wxt/browser";
 import { storage } from "wxt/utils/storage";
 import { openSitePage } from "../../lib/browser/open-site-page";
 import { isQuietTime, loadSettings } from "../settings/settings";
-import { isPackStockMessage, type PackStockMessage } from "./pack-messages";
-import { estimateStock, fullStockAt, nextStockChangeAt, type PackStockState, stateFromReading } from "./pack-stock";
+import { estimateStock, fullStockAt, nextStockChangeAt, type PackStockState } from "./pack-stock";
 import { packStockItem, readPackStockState } from "./pack-stock-store";
 
 const TICK_ALARM = "pack-stock-tick";
@@ -67,13 +66,10 @@ async function notifyIfFull(): Promise<void> {
 	});
 }
 
-async function handleMessage(message: PackStockMessage): Promise<void> {
-	if (message.type === "pack-stock/signed-out") {
-		await packStockItem.setValue(null);
-	} else {
-		await packStockItem.setValue(stateFromReading(message.reading, message.readAt));
-	}
-	await refresh();
+let pendingUpdate: Promise<void> = Promise.resolve();
+
+function queueUpdate(update: () => Promise<void>): void {
+	pendingUpdate = pendingUpdate.then(update).catch((error: unknown) => console.error("[Cote+]", error));
 }
 
 async function refreshAndNotify(): Promise<void> {
@@ -82,17 +78,15 @@ async function refreshAndNotify(): Promise<void> {
 }
 
 export function startPackAlert(): void {
-	browser.runtime.onMessage.addListener((message: unknown) => {
-		if (isPackStockMessage(message)) void handleMessage(message);
-	});
+	packStockItem.watch(() => queueUpdate(refresh));
 	browser.alarms.onAlarm.addListener((alarm) => {
-		if (alarm.name === TICK_ALARM || alarm.name === FULL_ALARM) void refreshAndNotify();
+		if (alarm.name === TICK_ALARM || alarm.name === FULL_ALARM) queueUpdate(refreshAndNotify);
 	});
 	browser.notifications.onClicked.addListener((notificationId) => {
 		if (notificationId !== FULL_NOTIFICATION_ID) return;
 		void browser.notifications.clear(notificationId);
 		void openSitePage("/pulls");
 	});
-	browser.runtime.onStartup.addListener(() => void refreshAndNotify());
-	browser.runtime.onInstalled.addListener(() => void refreshAndNotify());
+	browser.runtime.onStartup.addListener(() => queueUpdate(refreshAndNotify));
+	browser.runtime.onInstalled.addListener(() => queueUpdate(refreshAndNotify));
 }

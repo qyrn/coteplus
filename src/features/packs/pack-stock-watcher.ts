@@ -1,17 +1,16 @@
-import { browser } from "wxt/browser";
 import type { PageWatcher } from "../../lib/site/page-watcher";
-import type { PackStockMessage } from "./pack-messages";
-import { type PackStockReading, readPackStock } from "./pack-stock";
+import { type PackStockReading, readPackStock, stateFromReading } from "./pack-stock";
+import { packStockItem } from "./pack-stock-store";
 
 const SIGNED_OUT_ROUTES = new Set(["/login", "/signup"]);
 const COUNTDOWN_DRIFT_TOLERANCE_MS = 2000;
 
-interface SentReading {
+interface SavedReading {
 	reading: PackStockReading;
 	nextPackAt: number | null;
 }
 
-function isSameReading(previous: SentReading | null, reading: PackStockReading, nextPackAt: number | null): boolean {
+function isSameReading(previous: SavedReading | null, reading: PackStockReading, nextPackAt: number | null): boolean {
 	if (!previous) return false;
 	const sameCountdown =
 		previous.nextPackAt === nextPackAt ||
@@ -26,29 +25,32 @@ function isSameReading(previous: SentReading | null, reading: PackStockReading, 
 	);
 }
 
-function send(message: PackStockMessage): void {
-	browser.runtime.sendMessage(message).catch(() => undefined);
-}
-
 export function startPackStockWatcher(pageWatcher: PageWatcher): void {
-	let lastSent: SentReading | null = null;
-	let signedOutSent = false;
+	let lastSaved: SavedReading | null = null;
+	let signedOutSaved = false;
 
 	pageWatcher.subscribe(() => {
 		if (SIGNED_OUT_ROUTES.has(location.pathname)) {
-			if (!signedOutSent) send({ type: "pack-stock/signed-out" });
-			signedOutSent = true;
-			lastSent = null;
+			lastSaved = null;
+			if (signedOutSaved) return;
+			signedOutSaved = true;
+			packStockItem.setValue(null).catch(() => {
+				signedOutSaved = false;
+			});
 			return;
 		}
-		signedOutSent = false;
+		signedOutSaved = false;
 		if (location.pathname !== "/pulls") return;
 		const reading = readPackStock(document);
 		if (!reading) return;
 		const readAt = Date.now();
 		const nextPackAt = reading.nextPackInMs === null ? null : readAt + reading.nextPackInMs;
-		if (isSameReading(lastSent, reading, nextPackAt)) return;
-		lastSent = { reading, nextPackAt };
-		send({ type: "pack-stock/read", reading, readAt });
+		if (isSameReading(lastSaved, reading, nextPackAt)) return;
+		const saved = { reading, nextPackAt };
+		lastSaved = saved;
+		packStockItem.setValue(stateFromReading(reading, readAt)).catch((error: unknown) => {
+			if (lastSaved === saved) lastSaved = null;
+			console.error("[Cote+]", error);
+		});
 	});
 }

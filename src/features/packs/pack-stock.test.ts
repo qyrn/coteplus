@@ -40,6 +40,12 @@ describe("readPackStock", () => {
 		expect(readPackStock(document)).toEqual({ stock: 10, maxStock: 10, nextPackInMs: null, isPro: false });
 	});
 
+	it("skips a help text that mentions the label without a stock", () => {
+		const help = `<div><div>Les paquets disponibles se rechargent tout seuls. 5 / 5 étoiles.</div></div>`;
+		document.body.innerHTML = pullsMarkup("2", "1:00").replace("<main>", `<main>${help}`);
+		expect(readPackStock(document)?.stock).toBe(2);
+	});
+
 	it("returns null outside the pulls screen", () => {
 		document.body.innerHTML = "<main><div>Collection</div></main>";
 		expect(readPackStock(document)).toBeNull();

@@ -20,7 +20,7 @@ export interface PackStockState {
 
 const STOCK_LABEL = "paquets disponibles";
 const PRO_DAILY_PACK_LABEL = "Pack PRO du jour";
-const STOCK_PATTERN = /(\d+)\s*\/\s*(\d+)/;
+const STOCK_PATTERN = /(\d+)\s*\/\s*(\d+)\s*paquets? disponibles?/;
 const COUNTDOWN_PATTERN = /Prochain dans\s*(?:(\d+):)?(\d{1,2}):(\d{2})/;
 
 export function findStockBlock(root: ParentNode): HTMLElement | null {
@@ -29,7 +29,8 @@ export function findStockBlock(root: ParentNode): HTMLElement | null {
 			.filter((node) => node.nodeType === Node.TEXT_NODE)
 			.map((node) => node.textContent ?? "")
 			.join("");
-		if (ownText.includes(STOCK_LABEL)) return element.parentElement;
+		const block = element.parentElement;
+		if (ownText.includes(STOCK_LABEL) && STOCK_PATTERN.test(block?.textContent ?? "")) return block;
 	}
 	return null;
 }

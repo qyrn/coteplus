@@ -27,8 +27,23 @@ describe("parseNotifications", () => {
 		const [outbid, offer, duel] = parseNotifications(json);
 		expect(outbid).toMatchObject({ category: "market", title: "Vous avez été surenchéri", path: "/marketplace/a-1" });
 		expect(offer).toMatchObject({ category: "trades", title: "Nouvelle offre d'échange !", path: "/trades" });
-		expect(duel).toMatchObject({ category: "battles", title: "Bataille", path: "/battle/duels/b-9" });
+		expect(duel).toMatchObject({ category: "battles", title: "Bataille", path: "/battle/b-9" });
 		expect(parseNotifications(json)).toHaveLength(3);
+	});
+
+	it("opens the same page as the site for every notification type", () => {
+		const pathOf = (type: string, data: object): string | undefined =>
+			parseNotifications({ notifications: [{ id: "n", type, created_at: "2026-10-03T07:00:00Z", data }] })[0]?.path;
+		expect(pathOf("chat_message", {})).toBe("/dms");
+		expect(pathOf("guild_invite", { guild_id: "g1", guild_name: "Les Bidous" })).toBe(
+			"/guild?invite=g1&name=Les%20Bidous",
+		);
+		expect(pathOf("guild_join", {})).toBe("/guild");
+		expect(pathOf("marketplace_auction_won", {})).toBe("/marketplace");
+		expect(pathOf("custom", { duel_id: "d-2" })).toBe("/battle/duels/d-2");
+		expect(pathOf("custom", { href: "/collection" })).toBe("/collection");
+		expect(pathOf("custom", { href: "//evil.example" })).toBe("/trades");
+		expect(pathOf("admin_sanction", {})).toBe("/trades");
 	});
 });
 

@@ -45,14 +45,35 @@ function readId(data: Record<string, unknown>, key: string): string | null {
 	return typeof value === "string" && value.length > 0 ? encodeURIComponent(value) : null;
 }
 
-function pathFor(category: NotificationCategory, data: Record<string, unknown>): string {
-	const auctionId = readId(data, "auction_id");
-	const battleId = readId(data, "battle_id");
-	if (auctionId) return `/marketplace/${auctionId}`;
-	if (battleId) return `/battle/duels/${battleId}`;
-	if (category === "trades") return "/trades";
-	if (category === "friends") return "/friends";
-	return "/";
+const SAME_SITE_PATH_PATTERN = /^\/(?![/\\])[^\\]*$/;
+
+function guildInvitePath(data: Record<string, unknown>): string {
+	const guildId = readId(data, "guild_id") ?? "";
+	const guildName = typeof data.guild_name === "string" ? data.guild_name : "";
+	return `/guild?invite=${guildId}&name=${encodeURIComponent(guildName)}`;
+}
+
+function customPath(data: Record<string, unknown>): string {
+	const duelId = readId(data, "duel_id");
+	if (duelId) return `/battle/duels/${duelId}`;
+	return typeof data.href === "string" && SAME_SITE_PATH_PATTERN.test(data.href) ? data.href : "/trades";
+}
+
+function pathFor(type: string, data: Record<string, unknown>): string {
+	if (type === "friend_request") return "/friends";
+	if (type === "admin_cheat_warning" || type === "chat_message") return "/dms";
+	if (type === "battle_invite" || type === "battle_accepted") {
+		const battleId = readId(data, "battle_id");
+		return battleId ? `/battle/${battleId}` : "/battle";
+	}
+	if (type === "guild_invite") return guildInvitePath(data);
+	if (type === "guild_join") return "/guild";
+	if (type.startsWith("marketplace_")) {
+		const auctionId = readId(data, "auction_id");
+		return auctionId ? `/marketplace/${auctionId}` : "/marketplace";
+	}
+	if (type === "custom") return customPath(data);
+	return "/trades";
 }
 
 function readNotification(entry: unknown): SiteNotification | null {
@@ -70,7 +91,7 @@ function readNotification(entry: unknown): SiteNotification | null {
 		message: readText(data.message),
 		createdAt,
 		read: read === true,
-		path: pathFor(category, data),
+		path: pathFor(type, data),
 	};
 }
 

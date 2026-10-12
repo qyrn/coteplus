@@ -22,18 +22,24 @@ describe("readAllAfterLastId", () => {
 		]);
 	});
 
-	it("halves the page size and keeps it when the database times out", async () => {
+	it("halves the page size when the database times out, then grows it back", async () => {
 		const fetchPage = vi
 			.fn<FetchPageAfter>()
 			.mockRejectedValueOnce(timeout)
-			.mockResolvedValueOnce(rowsFrom(0, 500))
-			.mockResolvedValueOnce(rowsFrom(500, 10));
+			.mockRejectedValueOnce(timeout)
+			.mockResolvedValueOnce(rowsFrom(0, 250))
+			.mockResolvedValueOnce(rowsFrom(250, 500))
+			.mockResolvedValueOnce(rowsFrom(750, 1000))
+			.mockResolvedValueOnce(rowsFrom(1750, 10));
 		const rows = await readAllAfterLastId(fetchPage);
-		expect(rows).toHaveLength(510);
+		expect(rows).toHaveLength(1760);
 		expect(fetchPage.mock.calls).toEqual([
 			[1000, null],
 			[500, null],
-			[500, "00499"],
+			[250, null],
+			[500, "00249"],
+			[1000, "00749"],
+			[1000, "01749"],
 		]);
 	});
 

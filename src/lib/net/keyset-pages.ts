@@ -29,5 +29,6 @@ export async function readAllAfterLastId(fetchPage: FetchPageAfter): Promise<unk
 		const lastId = readRowId(page.at(-1));
 		if (page.length < pageSize || !lastId) return rows;
 		afterId = lastId;
+		pageSize = Math.min(FIRST_PAGE_SIZE, pageSize * 2);
 	}
 }

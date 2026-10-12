@@ -60,7 +60,7 @@ export function startBestSalesPanel(
 		if (owned.length === 0) {
 			list.replaceChildren();
 			explanation.textContent = "Lecture de ta collection en cours, la liste arrive dans une minute environ.";
-			void catalog.collectionIndexer.syncIfStale().then(render, () => undefined);
+			void catalog.collectionIndexer.syncIfStale().catch(() => undefined);
 			return;
 		}
 		const stats = await priceService.cachedPriceStats(owned);

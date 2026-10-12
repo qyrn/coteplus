@@ -39,9 +39,18 @@ describe("retryTransientFailures", () => {
 		expect(send).toHaveBeenCalledTimes(3);
 	});
 
-	it("never retries a status the server may have processed", async () => {
-		const send = vi.fn(async () => response(500));
+	it("retries a server error on a repeatable request", async () => {
+		const send = vi
+			.fn<() => Promise<Response>>()
+			.mockResolvedValueOnce(response(500))
+			.mockResolvedValueOnce(response(201));
 		const result = await retryTransientFailures(send, options());
+		expect(result.status).toBe(201);
+	});
+
+	it("never retries a status the server may have processed on a request that must not run twice", async () => {
+		const send = vi.fn(async () => response(500));
+		const result = await retryTransientFailures(send, { ...options(), repeatable: false });
 		expect(result.status).toBe(500);
 		expect(send).toHaveBeenCalledTimes(1);
 	});

@@ -7,6 +7,10 @@ export interface TransientRetryOptions {
 
 const UNPROCESSED_STATUSES = new Set([429, 503]);
 
+function isRetryableStatus(status: number, repeatable: boolean): boolean {
+	return UNPROCESSED_STATUSES.has(status) || (repeatable && status >= 500);
+}
+
 function wait(durationMs: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, durationMs));
 }
@@ -37,7 +41,7 @@ export async function retryTransientFailures(
 			await sleep(backoffMs);
 			continue;
 		}
-		if (!UNPROCESSED_STATUSES.has(response.status) || attempt >= options.maxRetries) return response;
+		if (!isRetryableStatus(response.status, options.repeatable) || attempt >= options.maxRetries) return response;
 		await sleep(readRetryAfterMs(response) ?? backoffMs);
 	}
 }

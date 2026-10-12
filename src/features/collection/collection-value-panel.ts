@@ -136,7 +136,7 @@ export function startCollectionValuePanel(
 			rarityLine(value),
 			...estimateLine(estimate, value),
 			note(
-				`Cote connue pour ${formatAmount(value.pricedCards)} cartes sur ${formatAmount(value.ownedCards)}. Les cotes manquantes se chargent toutes seules tant que tu restes sur ta collection, en commençant par les plus rares.`,
+				`Cote connue pour ${formatAmount(value.pricedCards)} cartes sur ${formatAmount(value.ownedCards)}. Les cotes manquantes se chargent toutes seules quand ta collection est affichée à l'écran, en commençant par les plus rares.`,
 			),
 		);
 	}

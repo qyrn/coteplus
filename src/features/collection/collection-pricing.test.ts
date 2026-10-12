@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { SiteApiPausedError } from "../../lib/net/site-api-guard";
 import type { OwnedCard } from "../cards/collection-index";
 import type { PriceService } from "../prices/price-service";
 import { loadMissingPrices, pricingOrder } from "./collection-pricing";
@@ -34,5 +35,50 @@ describe("loadMissingPrices", () => {
 		expect(completed).toBe(false);
 		expect(loadIfUnknown).toHaveBeenCalledTimes(1);
 		expect(onLoaded).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe("loadMissingPrices when the site pauses the extension", () => {
+	it("reports an unfinished run instead of skipping every card", async () => {
+		const loadIfUnknown = vi.fn<PriceService["loadIfUnknown"]>(async () => {
+			throw new SiteApiPausedError("Requêtes en pause");
+		});
+		const priceService: PriceService = {
+			getPrice: async () => ({ value: null, stats: null, refreshed: null }),
+			cachedPriceStats: async () => new Map(),
+			loadIfUnknown,
+		};
+		const cards = Array.from({ length: 10 }, (_, index) => owned(`c${index}`, "C"));
+		await expect(
+			loadMissingPrices(
+				cards,
+				priceService,
+				() => true,
+				() => undefined,
+			),
+		).resolves.toBe(false);
+		expect(loadIfUnknown.mock.calls.length).toBeLessThanOrEqual(2);
+	});
+
+	it("keeps going after a card that fails on its own", async () => {
+		const loadIfUnknown = vi.fn<PriceService["loadIfUnknown"]>(async (card) => {
+			if (card.cardId === "c0") throw new Error("HTTP 500");
+			return true;
+		});
+		const priceService: PriceService = {
+			getPrice: async () => ({ value: null, stats: null, refreshed: null }),
+			cachedPriceStats: async () => new Map(),
+			loadIfUnknown,
+		};
+		const cards = Array.from({ length: 4 }, (_, index) => owned(`c${index}`, "C"));
+		await expect(
+			loadMissingPrices(
+				cards,
+				priceService,
+				() => true,
+				() => undefined,
+			),
+		).resolves.toBe(true);
+		expect(loadIfUnknown).toHaveBeenCalledTimes(4);
 	});
 });

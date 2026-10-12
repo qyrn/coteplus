@@ -1,3 +1,4 @@
+import { isRecord } from "../json";
 import { findSupabasePublicKey } from "../site/supabase-public-key";
 import { parseSupabaseSession } from "../site/supabase-session";
 import { retryTransientFailures } from "./transient-retry";
@@ -23,6 +24,15 @@ const PAGES_PER_WAVE = 4;
 const MIN_SESSION_LIFETIME_MS = 60 * 1000;
 const BUSY_RETRY = { maxRetries: 4, baseBackoffMs: 1000 };
 
+async function readErrorCode(response: Response): Promise<string> {
+	try {
+		const body: unknown = await response.json();
+		return isRecord(body) && typeof body.code === "string" ? `, code ${body.code}` : "";
+	} catch {
+		return "";
+	}
+}
+
 export async function connectSupabase(): Promise<SupabaseRest> {
 	const session = parseSupabaseSession(document.cookie);
 	if (!session || session.expiresAt - Date.now() < MIN_SESSION_LIFETIME_MS) {
@@ -44,7 +54,7 @@ export async function connectSupabase(): Promise<SupabaseRest> {
 			{ ...BUSY_RETRY, repeatable },
 		);
 		if (response.status === 401) throw new SupabaseSessionError("Session refusée par le site");
-		if (!response.ok) throw new Error(`Supabase a répondu ${response.status}`);
+		if (!response.ok) throw new Error(`Supabase a répondu ${response.status}${await readErrorCode(response)}`);
 		return response;
 	}
 

@@ -123,11 +123,13 @@ export function startAutoTagPanel(
 	let pendingChanges: TagChange[] = [];
 	let pendingRetiredTags: ExistingTag[] = [];
 	let pendingDeletion: ExistingTag[] = [];
+	let pendingCopies: CollectionCopy[] = [];
 
 	function resetPreview(): void {
 		pendingChanges = [];
 		pendingRetiredTags = [];
 		pendingDeletion = [];
+		pendingCopies = [];
 		list.replaceChildren();
 		meta.textContent = "";
 		applyButton.hidden = true;
@@ -183,6 +185,7 @@ export function startAutoTagPanel(
 			ruleIds.map((id) => rules[id]),
 			snapshot.tags,
 		);
+		pendingCopies = snapshot.copies;
 		pendingChanges = plan.changes;
 		pendingRetiredTags = plan.retiredTags;
 		list.replaceChildren(
@@ -219,7 +222,7 @@ export function startAutoTagPanel(
 		showProgress(0);
 		const rest = await connectSupabase();
 		await applyTagChanges(rest, changes, showProgress);
-		await deleteTags(rest, retiredTags, (done) => showProgress(linkTotal + done));
+		await deleteTags(rest, retiredTags, pendingCopies, (done) => showProgress(linkTotal + done));
 		pendingChanges = [];
 		pendingRetiredTags = [];
 		applyButton.hidden = true;
@@ -232,6 +235,7 @@ export function startAutoTagPanel(
 		status.textContent = "Lecture de tes étiquettes...";
 		const snapshot = await loadTagSnapshot(await connectSupabase());
 		const tags = extensionTags(snapshot.tags, AUTO_TAGS);
+		pendingCopies = snapshot.copies;
 		pendingDeletion = tags;
 		list.replaceChildren(...tags.map((tag) => previewRow(tag, "supprimée", 0, taggedCopyCount(snapshot.copies, tag))));
 		meta.textContent = tags.length > 0 ? `${formatAmount(tags.length)} étiquettes` : "";
@@ -245,7 +249,7 @@ export function startAutoTagPanel(
 	async function confirmDeletion(): Promise<void> {
 		const tags = pendingDeletion;
 		status.textContent = `Suppression : 0 / ${formatAmount(tags.length)}`;
-		await deleteTags(await connectSupabase(), tags, (done) => {
+		await deleteTags(await connectSupabase(), tags, pendingCopies, (done) => {
 			status.textContent = `Suppression : ${formatAmount(done)} / ${formatAmount(tags.length)}`;
 		});
 		pendingDeletion = [];

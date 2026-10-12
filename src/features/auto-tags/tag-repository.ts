@@ -1,4 +1,5 @@
 import { isRecord } from "../../lib/json";
+import { runInShrinkingChunks } from "../../lib/net/shrinking-chunks";
 import type { SupabaseRest } from "../../lib/net/supabase-rest";
 import { isRarity } from "../../lib/site/rarity";
 import type { TagChange } from "./auto-tag-plan";
@@ -11,6 +12,7 @@ export interface TagSnapshot {
 }
 
 const INSERT_CHUNK_SIZE = 500;
+const DELETE_CHUNK_SIZE = 100;
 const LINK_CONFLICT_COLUMNS = "user_card_id,tag_id";
 
 function readTagIds(value: unknown): string[] {
@@ -54,12 +56,6 @@ export async function loadTagSnapshot(rest: SupabaseRest): Promise<TagSnapshot> 
 	};
 }
 
-function chunk<TItem>(items: readonly TItem[], size: number): TItem[][] {
-	return Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
-		items.slice(index * size, (index + 1) * size),
-	);
-}
-
 async function createTag(rest: SupabaseRest, change: TagChange): Promise<string> {
 	const [created] = await rest.insert("tags", [{ user_id: rest.userId, ...change.tag }], { returnRows: true });
 	const tag = readTag(created);
@@ -75,21 +71,31 @@ export async function applyTagChanges(
 	let doneLinks = 0;
 	for (const change of changes) {
 		const tagId = change.tagId ?? (await createTag(rest, change));
-		for (const userCardIds of chunk(change.additions, INSERT_CHUNK_SIZE)) {
+		await runInShrinkingChunks(change.additions, INSERT_CHUNK_SIZE, async (userCardIds) => {
 			const links = userCardIds.map((userCardId) => ({ user_card_id: userCardId, tag_id: tagId }));
 			await rest.insert("user_card_tags", links, { onConflict: LINK_CONFLICT_COLUMNS });
 			doneLinks += userCardIds.length;
 			onProgress(doneLinks);
-		}
+		});
 	}
+}
+
+async function deleteLinks(rest: SupabaseRest, tag: ExistingTag, copies: readonly CollectionCopy[]): Promise<void> {
+	const linkedIds = copies.filter((copy) => copy.tagIds.includes(tag.id)).map((copy) => copy.userCardId);
+	const tagFilter = `tag_id=eq.${encodeURIComponent(tag.id)}`;
+	await runInShrinkingChunks(linkedIds, DELETE_CHUNK_SIZE, (userCardIds) =>
+		rest.deleteRows(`user_card_tags?${tagFilter}&user_card_id=in.(${userCardIds.map(encodeURIComponent).join(",")})`),
+	);
 }
 
 export async function deleteTags(
 	rest: SupabaseRest,
 	tags: readonly ExistingTag[],
+	copies: readonly CollectionCopy[],
 	onProgress: (doneTags: number) => void,
 ): Promise<void> {
 	for (const [index, tag] of tags.entries()) {
+		await deleteLinks(rest, tag, copies);
 		await rest.rpc("delete_tag", { p_tag_id: tag.id });
 		onProgress(index + 1);
 	}

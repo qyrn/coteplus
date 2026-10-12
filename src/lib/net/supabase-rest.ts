@@ -12,6 +12,7 @@ export interface SupabaseRest {
 	userId: string;
 	getAll(path: string): Promise<unknown[]>;
 	insert(table: string, rows: readonly object[], options?: InsertOptions): Promise<unknown[]>;
+	deleteRows(path: string): Promise<void>;
 	rpc(functionName: string, args: object): Promise<void>;
 }
 
@@ -19,17 +20,34 @@ export class SupabaseSessionError extends Error {
 	override name = "SupabaseSessionError";
 }
 
+export class SupabaseRequestError extends Error {
+	override name = "SupabaseRequestError";
+
+	constructor(
+		readonly status: number,
+		readonly code: string | null,
+	) {
+		super(`Supabase a répondu ${status}${code ? `, code ${code}` : ""}`);
+	}
+}
+
+const STATEMENT_TIMEOUT_CODE = "57014";
+
+export function isStatementTimeout(error: unknown): boolean {
+	return error instanceof SupabaseRequestError && error.code === STATEMENT_TIMEOUT_CODE;
+}
+
 const PAGE_SIZE = 1000;
 const PAGES_PER_WAVE = 4;
 const MIN_SESSION_LIFETIME_MS = 60 * 1000;
 const BUSY_RETRY = { maxRetries: 4, baseBackoffMs: 1000 };
 
-async function readErrorCode(response: Response): Promise<string> {
+async function readErrorCode(response: Response): Promise<string | null> {
 	try {
 		const body: unknown = await response.json();
-		return isRecord(body) && typeof body.code === "string" ? `, code ${body.code}` : "";
+		return isRecord(body) && typeof body.code === "string" ? body.code : null;
 	} catch {
-		return "";
+		return null;
 	}
 }
 
@@ -54,7 +72,7 @@ export async function connectSupabase(): Promise<SupabaseRest> {
 			{ ...BUSY_RETRY, repeatable },
 		);
 		if (response.status === 401) throw new SupabaseSessionError("Session refusée par le site");
-		if (!response.ok) throw new Error(`Supabase a répondu ${response.status}${await readErrorCode(response)}`);
+		if (!response.ok) throw new SupabaseRequestError(response.status, await readErrorCode(response));
 		return response;
 	}
 
@@ -93,6 +111,9 @@ export async function connectSupabase(): Promise<SupabaseRest> {
 				options.onConflict !== undefined,
 			);
 			return options.returnRows ? readRows(response) : [];
+		},
+		async deleteRows(path) {
+			await send(path, { method: "DELETE", headers: { Prefer: "return=minimal" } }, true);
 		},
 		async rpc(functionName, args) {
 			await send(

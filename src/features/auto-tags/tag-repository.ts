@@ -45,14 +45,15 @@ function readTag(row: unknown): ExistingTag | null {
 export async function loadTagSnapshot(rest: SupabaseRest): Promise<TagSnapshot> {
 	const owner = `user_id=eq.${encodeURIComponent(rest.userId)}`;
 	const [copyRows, tagRows] = await Promise.all([
-		rest.getAll(
-			`user_cards?select=id,card_id,starred,card:cards(rarity,category),user_card_tags(tag_id)&${owner}&order=id`,
-		),
-		rest.getAll(`tags?select=id,name,color&${owner}&order=name`),
+		rest.getAll(`user_cards?select=id,card_id,starred,card:cards(rarity,category),user_card_tags(tag_id)&${owner}`),
+		rest.getAll(`tags?select=id,name,color&${owner}`),
 	]);
 	return {
 		copies: copyRows.map(readCopy).filter((copy): copy is CollectionCopy => copy !== null),
-		tags: tagRows.map(readTag).filter((tag): tag is ExistingTag => tag !== null),
+		tags: tagRows
+			.map(readTag)
+			.filter((tag): tag is ExistingTag => tag !== null)
+			.sort((left, right) => left.name.localeCompare(right.name)),
 	};
 }
 

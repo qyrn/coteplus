@@ -1,4 +1,4 @@
-import { isStatementTimeout } from "./supabase-rest";
+import { isStatementTimeout } from "./supabase-request-error";
 
 async function runSplittingOnTimeout<TItem>(
 	chunk: readonly TItem[],

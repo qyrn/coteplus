@@ -1,6 +1,8 @@
 import { isRecord } from "../json";
 import { findSupabasePublicKey } from "../site/supabase-public-key";
 import { parseSupabaseSession } from "../site/supabase-session";
+import { readAllAfterLastId } from "./keyset-pages";
+import { SupabaseRequestError } from "./supabase-request-error";
 import { retryTransientFailures } from "./transient-retry";
 
 export interface InsertOptions {
@@ -20,25 +22,6 @@ export class SupabaseSessionError extends Error {
 	override name = "SupabaseSessionError";
 }
 
-export class SupabaseRequestError extends Error {
-	override name = "SupabaseRequestError";
-
-	constructor(
-		readonly status: number,
-		readonly code: string | null,
-	) {
-		super(`Supabase a répondu ${status}${code ? `, code ${code}` : ""}`);
-	}
-}
-
-const STATEMENT_TIMEOUT_CODE = "57014";
-
-export function isStatementTimeout(error: unknown): boolean {
-	return error instanceof SupabaseRequestError && error.code === STATEMENT_TIMEOUT_CODE;
-}
-
-const PAGE_SIZE = 1000;
-const PAGES_PER_WAVE = 4;
 const MIN_SESSION_LIFETIME_MS = 60 * 1000;
 const BUSY_RETRY = { maxRetries: 4, baseBackoffMs: 1000 };
 
@@ -83,19 +66,11 @@ export async function connectSupabase(): Promise<SupabaseRest> {
 
 	return {
 		userId: session.userId,
-		async getAll(path) {
-			const rows: unknown[] = [];
-			for (let firstPage = 0; ; firstPage += PAGES_PER_WAVE) {
-				const wave = await Promise.all(
-					Array.from({ length: PAGES_PER_WAVE }, async (_, offset) => {
-						const from = (firstPage + offset) * PAGE_SIZE;
-						const range = { Range: `${from}-${from + PAGE_SIZE - 1}` };
-						return readRows(await send(path, { headers: range }, true));
-					}),
-				);
-				for (const page of wave) rows.push(...page);
-				if (wave.some((page) => page.length < PAGE_SIZE)) return rows;
-			}
+		getAll(path) {
+			return readAllAfterLastId(async (pageSize, afterId) => {
+				const cursor = afterId ? `&id=gt.${encodeURIComponent(afterId)}` : "";
+				return readRows(await send(`${path}&order=id&limit=${pageSize}${cursor}`, {}, true));
+			});
 		},
 		async insert(table, rows, options = {}) {
 			const preferences = [options.returnRows ? "return=representation" : "return=minimal"];

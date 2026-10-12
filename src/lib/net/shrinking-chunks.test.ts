@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { runInShrinkingChunks } from "./shrinking-chunks";
-import { SupabaseRequestError } from "./supabase-rest";
+import { SupabaseRequestError } from "./supabase-request-error";
 
 const timeout = new SupabaseRequestError(500, "57014");
 
